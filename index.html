@@ -1467,6 +1467,27 @@ function undoLastMove() {
   updateTutorialButtonState();
 }
 
+function pauseGame() {
+  paused = true;
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById("pauseBtn").textContent = "Reprendre";
+  flash("Jeu en pause");
+}
+
+function resumeGame() {
+  paused = false;
+  startTimer();
+  document.getElementById("pauseBtn").textContent = "Pause";
+  flash("Reprise");
+}
+
+function togglePause() {
+  if (paused) resumeGame();
+  else pauseGame();
+}
+
+
   // ===============================
   //   CLIGNOTEMENT D’UN POINT (TUTORIEL)
   // ===============================
@@ -1672,7 +1693,12 @@ canvas.addEventListener("click", (e) => {
 
   if (!timerRunning) startTimer();
   if (tutorialRunning) return;  // Le tutoriel bloque le jeu, mais pas le son
-  if (paused) return;
+  if (paused) {
+          resumeGame();
+          // Optionnel : return ici si tu veux que le clic ne joue PAS un coup
+         // return;
+      }
+
 
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
@@ -1732,19 +1758,7 @@ canvas.addEventListener("click", (e) => {
 
   document.getElementById("pauseBtn").addEventListener("click", () => {
   if (tutorialRunning) return;
-
-  paused = !paused;
-
-  if (paused) {
-    clearInterval(timerInterval);
-    timerRunning = false;
-    document.getElementById("pauseBtn").textContent = "Reprendre";
-    flash("Jeu en pause");
-  } else {
-    startTimer();
-    document.getElementById("pauseBtn").textContent = "Pause";
-    flash("Reprise");
-  }
+  togglePause();
 });
 
 
