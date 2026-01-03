@@ -663,63 +663,41 @@ body.bg-ready {
 
 
   <!-- === HELP OVERLAY === -->
-  <div id="helpOverlay">
-    <div id="helpContent">
+<div id="helpOverlay">
+  <div id="helpContent">
 
-      <button class="close-btn" id="closeHelpBtn">Fermer</button>
+    <button class="close-btn" id="closeHelpBtn">Fermer</button>
 
-      <h2>📖 Guide du joueur</h2>
+    <h2>📖 Aide</h2>
 
-      <p><strong>🎯 Objectif :</strong> À partir des points de la Croix de Malte, tracer des lignes de 5 points alignés pour activer de nouveaux points, étendre le réseau et accumuler des jokers.</p>
+    <h3>L’objectif</h3>
+    <p>Tracer un maximum de lignes de <strong>5 points</strong> en utilisant comme point de départ la <strong>Croix de Malte initiale</strong>.</p>
 
-      <h3>🕹️ Commandes</h3>
-      <ul>
-        <li>Clic gauche sur un point → Sélectionner le point de départ.</li>
-        <li>Clic gauche sur un autre point → Valider une ligne de 5 points si l’alignement est correct.</li>
-        <li><strong>Rejouer</strong> → Réinitialiser la partie.</li>
-        <li><strong>Retour</strong> → Supprimer le dernier coup.</li>
-        <li><strong>Pas à Pas</strong> → Tutoriel animé montrant 3 exemples de lignes.</li>
-        <li><strong>Aide</strong> → Ouvrir/fermer ce panneau.</li>
-        <li><strong>Son</strong> → Activer/Désactiver les effets sonores.</li>
-      </ul>
+    <h3>Comment jouer</h3>
+    <ol>
+      <li>Repère une ligne possible de <strong>5 points alignés</strong>.</li>
+      <li>Clique sur <strong>l’un des points d’extrémité</strong>, puis sur le <strong>point d’arrivée</strong>.</li>
+      <li>La ligne sera créée automatiquement si elle est valide.</li>
+    </ol>
 
-      <h3>🧩 Règles principales</h3>
-      <ul>
-        <li>Une ligne doit comporter <strong>exactement 5 points alignés</strong>.</li>
-        <li>Les points déjà actifs peuvent être réutilisés.</li>
-        <li>Interdiction de réutiliser une ligne déjà tracée.</li>
-        <li>Une ligne doit contenir <strong>au moins 2 points actifs</strong>.</li>
-      </ul>
+    <h3>Règles</h3>
+    <ul>
+      <li>Une ligne doit faire <strong>exactement 5 points</strong>.</li>
+      <li>Une ligne doit contenir <strong>au préalable au moins 2 points déjà actifs</strong>.</li>
+      <li>Les lignes peuvent <strong>se croiser</strong>, mais <strong>pas se superposer</strong>.</li>
+    </ul>
 
-      <h3>🃏 Jokers</h3>
-      <ul>
-        <li>5 points actifs → <strong>+1 joker</strong></li>
-        <li>4 points actifs → neutre</li>
-        <li>3 points actifs → <strong>−1 joker</strong></li>
-        <li>2 points actifs → <strong>−2 jokers</strong></li>
-        <li>Moins de 2 points actifs → coup refusé</li>
-      </ul>
+    <h3>Jokers</h3>
+    <p>Gagnés lorsqu’une ligne utilise <strong>5 points déjà actifs</strong>.</p>
+    <ul>
+      <li><strong>1 joker</strong> si la ligne comporte <strong>3 points actifs</strong>.</li>
+      <li><strong>2 jokers</strong> si elle ne comporte que <strong>2 points actifs</strong>.</li>
+      <li><em>Les lignes avec moins de 2 points actifs ne sont pas autorisées.</em></li>
+    </ul>
 
-      <h3>📈 Score</h3>
-      <p>Chaque ligne validée ajoute <strong>+1 point</strong>.</p>
-
-      <h3>🗂️ Historique</h3>
-      <p>Affiche chaque ligne tracée, avec un code couleur.</p>
-
-      <h3>↩️ Annuler un coup</h3>
-      <p>Le bouton <strong>Retour</strong> retire la dernière ligne jouée.</p>
-
-      <h3>✝️ La Croix de Malte</h3>
-      <p>Le jeu commence avec une figure centrale pré‑activée.</p>
-
-      <h3>🎬 Mode Pas à Pas</h3>
-      <p>Tutoriel animé en 3 étapes.</p>
-
-      <h3>💡 Conseils</h3>
-      <p>Utilise les jokers avec stratégie.</p>
-
-    </div>
   </div>
+</div>
+
 
 
 <!-- === SONS === -->
@@ -1320,7 +1298,7 @@ activePoints.forEach(key => {
       (Math.abs(dx) === 4 && Math.abs(dy) === 4);
 
     if (!aligned) {
-      flash("Impossible", "error");
+      flash("Impossible : Points non alignés", "error");
       if (soundEnabled) {
        const a = document.getElementById("errorSound");
        if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1341,7 +1319,7 @@ activePoints.forEach(key => {
 
     const overlapsEdge = edges.some(e => usedEdges.has(e));
     if (overlapsEdge) {
-      flash("Impossible", "error");
+      flash("Impossible : segment déjà utilisé", "error");
       if (soundEnabled) {
        const a = document.getElementById("errorSound");
        if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1352,7 +1330,7 @@ activePoints.forEach(key => {
     const activeCount = segment.filter(p => activePoints.has(p)).length;
 
     if (activeCount < 2) {
-      flash("Impossible", "error");
+      flash("Impossible : au moins 2 points actifs nécessaires ", "error");
       if (soundEnabled) {
         const a = document.getElementById("errorSound");
         if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1374,7 +1352,7 @@ activePoints.forEach(key => {
         loseJoker(1);
         flash("- 1 joker", "info");
       } else {
-        flash("Impossible", "error");
+        flash("Impossible : plus de joker", "error");
 	if (soundEnabled) {
           const a = document.getElementById("errorSound");
           if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1387,7 +1365,7 @@ activePoints.forEach(key => {
         loseJoker(2);
         flash("- 2 jokers", "info");
       } else {
-        flash("Impossible", "error");
+        flash("Impossible : 2 jokers sont nécessaires ", "error");
         return null;
       }
     }
