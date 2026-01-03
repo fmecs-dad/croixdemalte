@@ -1362,7 +1362,7 @@ activePoints.forEach(key => {
         loseJoker(1);
         flash("- 1 joker", "info");
       } else {
-        flash("Impossible : plus de joker", "error");
+        flash("Impossible : pas de joker", "error");
 	if (soundEnabled) {
           const a = document.getElementById("errorSound");
           if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1698,7 +1698,6 @@ canvas.addEventListener("click", (e) => {
           // Optionnel : return ici si tu veux que le clic ne joue PAS un coup
          // return;
       }
-
 
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
