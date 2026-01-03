@@ -6,10 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preload" as="image" href="images/monfond.jpg">
 
-
   <style>
   /* === Mise en page générale === */
-
 
 body {
   margin: 0;
@@ -40,10 +38,16 @@ body.bg-ready {
 /* === TOP BAR === */
 
 #topBar {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+}
+
+#topBar {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 40px;
+  gap: 20px;
   background: #333;
   color: white;
   padding: 10px 20px;
@@ -54,22 +58,19 @@ body.bg-ready {
   font-size: 24px;
 }
 
-#titleArea,
-#statusArea,
-#buttonsArea {
-  display: inline-block;
-  vertical-align: top;
-}
-
 #subtitle {
   font-size: 14px;
   opacity: 0.9;
 }
 
 #statusArea {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 00px;
   text-align: right;
   font-size: 15px;
-  width: 260px;
+  width: auto;
   flex-shrink: 0;
 }
 
@@ -108,7 +109,6 @@ body.bg-ready {
     pointer-events: none;
 }
 
-
 /* === ZONE PRINCIPALE === */
 
 #mainArea {
@@ -125,12 +125,10 @@ body.bg-ready {
   height: 35px;
   vertical-align: middle;
   margin-right: 6px;
-  border-radius: 8px; /* si tes icônes ont des coins arrondis */
+  border-radius: 8px;
 }
 
-
 /* === BOARD WRAPPER === */
-
 
 #boardWrapper {
   flex: 0 0 auto;
@@ -142,7 +140,7 @@ body.bg-ready {
   padding-left: 60px;
   position: relative;
   box-sizing: border-box;
-  min-height: 700px;
+  min-height: 600px; /* ← ajusté */
 }
 
 /* === CADRE EN BOIS === */
@@ -157,8 +155,8 @@ body.bg-ready {
 
 #canvasContainer {
   position: relative;
-  width: 700px;
-  height: 700px;
+  width: 600px;   /* ← ajusté */
+  height: 600px;  /* ← ajusté */
   z-index: 1;
 }
 
@@ -166,8 +164,8 @@ body.bg-ready {
   content: "";
   position: absolute;
 
-  width: 780px;
-  height: 780px;
+  width: 660px;   /* ← ajusté proportionnellement */
+  height: 660px;  /* ← ajusté */
 
   left: 50%;
   top: 50%;
@@ -182,7 +180,6 @@ body.bg-ready {
   pointer-events: none;
   z-index: 0;
 }
-
 
 @keyframes shimmerMove {
   0%   { background-position: 0% 50%; }
@@ -226,8 +223,8 @@ body.bg-ready {
 /* === CANVAS === */
 
 #gameCanvas {
-  width: 700px !important;
-  height: 700px !important;
+  width: 600px !important;
+  height: 600px !important;
   background: #fafafa;
   display: block;
   position: relative;
@@ -611,10 +608,10 @@ body.bg-ready {
       <div id="buttonsArea">
         <button id="resetBtn" class="main-btn">Rejouer</button>
         <button id="undoBtn" class="main-btn">Retour</button>
+        <button id="pauseBtn" class="main-btn">Pause</button>
         <button id="stepBtn" class="main-btn">Pas à Pas</button>
         <button id="helpBtn" class="main-btn">Aide</button>
         <button id="soundBtn" class="main-btn">Son : on</button>
-
       </div>
 
     </div> <!-- /topBar -->
@@ -646,7 +643,8 @@ body.bg-ready {
         <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span>
       </div>
 
-      <canvas id="gameCanvas" width="700" height="700"></canvas>
+      <!-- CANVAS 600×600 -->
+      <canvas id="gameCanvas" width="600" height="600"></canvas>
 
       <div id="focusOverlay"></div>
 
@@ -755,7 +753,7 @@ document.getElementById("closeEndGame").addEventListener("click", () => {
 
 const size = 34;
 const offset = 20;
-const spacing = (700 - 2 * offset) / (size - 1);
+const spacing = (600 - 2 * offset) / (size - 1);
 
 window.size = size;
 window.offset = offset;
@@ -988,6 +986,8 @@ function playJokerLossSound() {
   let selectedStart = null;
   let score = 0;
   
+  let paused = false;
+
   let gameOver = false;
   
   let activePoints = new Set();
@@ -1684,6 +1684,7 @@ canvas.addEventListener("click", (e) => {
 
   if (!timerRunning) startTimer();
   if (tutorialRunning) return;  // Le tutoriel bloque le jeu, mais pas le son
+  if (paused) return;
 
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
@@ -1740,6 +1741,24 @@ canvas.addEventListener("click", (e) => {
     if (tutorialRunning) return;
     undoLastMove();
   });
+
+  document.getElementById("pauseBtn").addEventListener("click", () => {
+  if (tutorialRunning) return;
+
+  paused = !paused;
+
+  if (paused) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById("pauseBtn").textContent = "Reprendre";
+    flash("Jeu en pause");
+  } else {
+    startTimer();
+    document.getElementById("pauseBtn").textContent = "Pause";
+    flash("Reprise");
+  }
+});
+
 
   document.getElementById("helpBtn").addEventListener("click", () => {
     document.getElementById("helpOverlay").style.display = "flex";
