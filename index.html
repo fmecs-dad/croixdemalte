@@ -749,7 +749,7 @@ window.spacing = spacing;
 
 window.addEventListener("click", unlockAudio, { once: true });
 
-
+let gameOver = false;
 
 
 function unlockAudio() {
@@ -816,13 +816,21 @@ function flash(message) {
   }, 1500);
 }
 
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerRunning = false;
+}
+
 function showEndGamePanel() {
     document.getElementById("finalScore").textContent = "Score final : " + score;
 
     // Figer le jeu
     gameOver = true;
 
-    // Désactiver le bouton Retour
+    // Désactiver Pause et Retour
+    document.getElementById("pauseBtn").disabled = true;
+    document.getElementById("pauseBtn").classList.add("disabled");
+
     document.getElementById("undoBtn").disabled = true;
     document.getElementById("undoBtn").classList.add("disabled");
 
@@ -831,9 +839,11 @@ function showEndGamePanel() {
 }
 
 
-function checkGameOver() {
+function checkGameOver() {   
     const moves = getPossibleMoves(); // ta fonction existante
     if (moves.length === 0) {
+        gameOver = true;
+        stopTimer();
         showEndGamePanel();
     }
 }
@@ -976,7 +986,7 @@ function playJokerLossSound() {
   
   let paused = false;
 
-  let gameOver = false;
+  //let gameOver = false;
   
   let activePoints = new Set();
   let permanentPoints = new Set();
@@ -1691,13 +1701,15 @@ blinkPoint(step.start.x, step.start.y).then(() => {
 
 canvas.addEventListener("click", (e) => {
 
+  if (gameOver) return;   // ← maintenant ça fonctionne
+
   if (!timerRunning) startTimer();
-  if (tutorialRunning) return;  // Le tutoriel bloque le jeu, mais pas le son
+  if (tutorialRunning) return;
+
   if (paused) {
-          resumeGame();
-          // Optionnel : return ici si tu veux que le clic ne joue PAS un coup
-         // return;
-      }
+     resumeGame();
+     // return; // si tu veux empêcher le coup juste après la reprise
+  }
 
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
