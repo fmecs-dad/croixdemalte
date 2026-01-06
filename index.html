@@ -19,16 +19,6 @@ body {
   background-attachment: fixed;
 }
 
-/* Fade-in du fond une fois chargé */
-body {
-  opacity: 0;
-  transition: opacity 0.3s ease-out;
-}
-
-body.bg-ready {
-  opacity: 1;
-}
-
 #gameContainer {
   display: flex;
   flex-direction: column;
@@ -118,15 +108,7 @@ body.bg-ready {
   align-items: flex-start;
 }
 
-/* === DESSIN DES ICONES === */
 
-.arrow-icon {
-  width: 35px;
-  height: 35px;
-  vertical-align: middle;
-  margin-right: 6px;
-  border-radius: 8px;
-}
 
 /* === BOARD WRAPPER === */
 
@@ -466,7 +448,6 @@ body.bg-ready {
   filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
 }
 
-
 #endGameOverlay {
   position: fixed;
   top: 0;
@@ -576,10 +557,43 @@ body.bg-ready {
   100% { transform: translateX(0) scale(1); }
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  font-size: 18px;
+}
+
+#readyModal {
+  z-index: 200000 !important;
+}
+
+
   </style>
 </head>
 
 <body>
+
+  <div id="readyModal" class="modal">
+  <div class="modal-content">
+    <p>Prêt à jouer ?</p>
+    <button id="readyBtn" class="main-btn">OK</button>
+  </div>
+</div>
+
+
   <div id="gameContainer">
 
     <!-- === TOP BAR === -->
@@ -621,8 +635,6 @@ body.bg-ready {
       </div>
 
     </div> <!-- /topBar -->
-
-
 
 <!-- === MAIN AREA (historique + grille) === -->
 <div id="mainArea">
@@ -678,7 +690,7 @@ body.bg-ready {
     <div class="aide-separator"></div>
 
     <h3>L’objectif</h3>
-    <p>Tracer un maximum de lignes de 5 points en partant de la Croix de Malte formée par les 4 points actifs initiaux.</p>
+    <p>Tracer un maximum de lignes de 5 points en partant de la Croix de Malte avec les points noirs déjà actifs.</p>
     <div class="aide-separator"></div>
 
     <h3>Comment jouer</h3>
@@ -718,7 +730,8 @@ body.bg-ready {
 <audio id="tutorialSound" src="sounds/tutorial.mp3" preload="auto"></audio>
 <audio id="jokerSound" src="sounds/joker.mp3" preload="auto"></audio>
 <audio id="jokerLossSound" src="sounds/jokerloss.mp3" preload="auto"></audio>
-<audio id="shadowSound" src="sounds/grid.mp3" preload="auto"></audio>
+<audio id="endGameSound" src="sounds/end.mp3" preload="auto"></audio>
+<audio id="startGameSound" src="sounds/start.mp3" preload="none"></audio>
 
 <div id="flashContainer"></div>
 
@@ -730,11 +743,20 @@ body.bg-ready {
   </div>
 </div>
 
+
   <script>
 
 // ===============================
 //   VARIABLES GLOBALES
 // ===============================
+
+document.querySelectorAll("audio").forEach(a => {
+  const originalPlay = a.play;
+  a.play = function() {
+    return originalPlay.call(this);
+  };
+});
+
 
 document.getElementById("closeEndGame").addEventListener("click", () => {
     document.getElementById("endGameOverlay").classList.add("hidden");
@@ -748,13 +770,9 @@ window.size = size;
 window.offset = offset;
 window.spacing = spacing;
 
-window.addEventListener("click", unlockAudio, { once: true });
-
-let gameOver = false;
-
-
 function unlockAudio() {
-  const ids = ["clickSound","errorSound","successSound","tutorialSound","jokerSound","jokerLossSound"];
+
+  const ids = ["clickSound","errorSound","successSound","tutorialSound","jokerSound","jokerLossSound","endGameSound"];
   ids.forEach(id => {
     const a = document.getElementById(id);
     a.volume = 0.001; // quasi inaudible
@@ -770,16 +788,8 @@ function unlockAudio() {
 }
 
 document.addEventListener("click", () => {
-  const ids = ["clickSound","errorSound","successSound","tutorialSound","jokerSound","jokerLossSound"];
-  ids.forEach(id => {
-    const a = document.getElementById(id);
-    // Débloque l'audio sans gêner le clic de jeu
-    setTimeout(() => {
-      a.play().catch(()=>{});
-      a.pause();
-      a.currentTime = 0;
-    }, 0);
-  });
+  unlockAudio();
+  audioUnlocked = true;
 }, { once: true });
 
 (function() {
@@ -825,6 +835,8 @@ function stopTimer() {
 function showEndGamePanel() {
     document.getElementById("finalScore").textContent = "Score final : " + score;
 
+    playEndGameSound();
+
     // Figer le jeu
     gameOver = true;
 
@@ -834,6 +846,8 @@ function showEndGamePanel() {
 
     document.getElementById("undoBtn").disabled = true;
     document.getElementById("undoBtn").classList.add("disabled");
+
+    
 
     // Afficher le panneau de fin de partie
     document.getElementById("endGameOverlay").classList.remove("hidden");
@@ -873,7 +887,7 @@ function resetGameState() {
   }
 
   // Timer
-  resetTimer();          // remet timerSeconds = 0 et affichage "00:00"
+  resetTimer();          
 
   // Compteurs UI
   updateCounters();
@@ -979,6 +993,21 @@ function playJokerLossSound() {
   a.play();
 }
 
+function playEndGameSound() {
+  if (!soundEnabled) return;
+  const a = document.getElementById("endGameSound");
+  a.currentTime = 0;
+  a.play();
+}
+
+function playStartGameSound() {
+  if (!soundEnabled) return;
+  const a = document.getElementById("startGameSound");
+  a.currentTime = 0;
+  a.play();
+}
+
+
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
@@ -987,7 +1016,8 @@ function playJokerLossSound() {
   
   let paused = false;
 
-  //let gameOver = false;
+  let gameOver = false;
+  let audioUnlocked = false
   
   let activePoints = new Set();
   let permanentPoints = new Set();
@@ -1014,17 +1044,17 @@ function playJokerLossSound() {
   // Étapes du tutoriel
   const tutorialSteps = [
     {
-      message: "Exemple 1 : une ligne horizontale.", icon: "<img src='icons/arrow-horizontal.png' class='arrow-icon'>",
+      message: "Exemple 1 : une ligne horizontale.",
       start: { x: 15, y: 12 },
       end:   { x: 19, y: 12 }
     },
     {
-      message: "Exemple 2 : une ligne verticale.", icon: "<img src='icons/arrow-vertical.png' class='arrow-icon'>",
+      message: "Exemple 2 : une ligne verticale.",
       start: { x: 15, y: 12 },
       end:   { x: 15, y: 16 }
     },
     {
-      message: "Exemple 3 : une ligne diagonale.", icon: "<img src='icons/arrow-diagonal.png' class='arrow-icon'>",
+      message: "Exemple 3 : une ligne diagonale.",
       start: { x: 12, y: 16 },
       end:   { x: 16, y: 12 }
     }
@@ -1363,7 +1393,7 @@ activePoints.forEach(key => {
     if (activeCount === 5) {
       gainJoker();
       flash("+ 1 joker", "success");
-      // ✅ Son de succès
+      // Son de succès
       if (soundEnabled) {
         const a = document.getElementById("successSound");
         if (a) { a.currentTime = 0; a.play().catch(() => {}); }
@@ -1624,8 +1654,8 @@ function togglePause() {
   // ===============================
 
   tutorialBtn.addEventListener("click", () => {
-  if (tutorialRunning) return;
   playClickSound();
+  if (tutorialRunning) return;
 
   // 1) Remise à zéro complète, comme Rejouer
   resetGameState();
@@ -1672,9 +1702,6 @@ function togglePause() {
     return;
   }
 
-  // Son de tutoriel à chaque étape
-  playTutorialSound();
-
   // Bulle + couleur
   showTutorialBubble(step.message, step.icon);
   const bubble = document.getElementById("tutorialBubble");
@@ -1700,6 +1727,33 @@ blinkPoint(step.start.x, step.start.y).then(() => {
   //   INTERACTION : CLIC SUR LA GRILLE
   // ===============================
 
+function getNearestPoint(mx, my) {
+  let best = null;
+  let bestDist = Infinity;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const px = offset + x * spacing;
+      const py = offset + y * spacing;
+
+      const dx = mx - px;
+      const dy = my - py;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = { x, y };
+      }
+    }
+  }
+
+  // Tolérance : 12 px (à ajuster selon ressenti)
+  if (bestDist <= 12) return best;
+
+  return null;
+}
+
+
 canvas.addEventListener("click", (e) => {
 
   if (gameOver) return;   // ← maintenant ça fonctionne
@@ -1716,8 +1770,20 @@ canvas.addEventListener("click", (e) => {
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
 
-  const x = Math.round((mx - offset) / spacing);
-  const y = Math.round((my - offset) / spacing);
+  //const x = Math.round((mx - offset) / spacing);
+  //const y = Math.round((my - offset) / spacing);
+
+  const nearest = getNearestPoint(mx, my);
+
+  if (!nearest) {
+    flash("Hors grille", "error");
+    playErrorSound();
+    selectedStart = null;
+    return;
+  } 
+
+  const { x, y } = nearest;
+
 
   if (x < 0 || x >= size || y < 0 || y >= size) {
     flash("Hors grille", "error");
@@ -1727,7 +1793,7 @@ canvas.addEventListener("click", (e) => {
   }
 
   if (!selectedStart) {
-    playClickSound();
+    //playClickSound();
     selectedStart = { x, y };
     return;
   }
@@ -1753,8 +1819,7 @@ canvas.addEventListener("click", (e) => {
   // ===============================
 
   document.getElementById("resetBtn").addEventListener("click", () => {
-  playClickSound();
-
+  playClickSound()
   // Remet tout à zéro (logique + UI + timer + historique + canvas)
   resetGameState();
 
@@ -1764,25 +1829,32 @@ canvas.addEventListener("click", (e) => {
 
 
   document.getElementById("undoBtn").addEventListener("click", () => {
+    playClickSound();
     if (tutorialRunning) return;
     undoLastMove();
   });
 
   document.getElementById("pauseBtn").addEventListener("click", () => {
+  playClickSound();
   if (tutorialRunning) return;
   togglePause();
 });
 
 
   document.getElementById("helpBtn").addEventListener("click", () => {
+    playClickSound();
     document.getElementById("helpOverlay").style.display = "flex";
+    playClickSound();
   });
 
   document.getElementById("closeHelpBtn").addEventListener("click", () => {
+    playClickSound();
     document.getElementById("helpOverlay").style.display = "none";
+    playClickSound();
   });
 
   document.getElementById("soundBtn").addEventListener("click", (e) => {
+    playClickSound();
     soundEnabled = !soundEnabled;
     e.target.textContent = soundEnabled ? "Son : on" : "Son : off";
   });
@@ -1806,21 +1878,32 @@ function initGame() {
     updateTutorialButtonState();
 }
 
-initGame();
+//initGame();
 
-window.addEventListener("load", () => {
-  const bg = new Image();
-  bg.src = "images/monfond.jpg";
+document.getElementById("readyBtn").addEventListener("click", () => {
+  unlockAudio();
+  audioUnlocked = true;
 
-  bg.onload = () => {
-    document.body.classList.add("bg-ready");
+  document.getElementById("readyModal").style.display = "none";
 
-    setTimeout(() => {
-      const el = document.getElementById("canvasContainer");
-      el.classList.add("show");
-      playSound("boardSound");
-    }, 700); // délai pour l’animation du plateau
-  };
+  // lancer le jeu (si tu veux le lancer ici seulement, retire le initGame() du dessus)
+  initGame();
+
+  const board = document.getElementById("canvasContainer");
+
+  // état initial : hors champ, prêt à glisser
+  board.classList.remove("show");
+  board.classList.add("slide-in-premium");
+
+  // forcer le navigateur à prendre en compte cet état initial
+  void board.offsetWidth;
+
+  // déclencher l’animation + le son dans le même “tick”
+  board.classList.add("show");
+  setTimeout(() => {
+    playStartGameSound();
+  }, 1800);
+
 });
 
 function playSound(id) {
@@ -1830,6 +1913,7 @@ function playSound(id) {
   audio.currentTime = 0;
   audio.play();
 }
+
   </script>
 
 </body>
