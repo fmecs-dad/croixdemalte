@@ -465,33 +465,44 @@ body {
   display: none;
 }
 
-//#bestScoreOverlay.overlay {
-//    position: fixed;
-//    top: 0;
-//    left: 0;
-//    width: 100%;
-//    height: 100%;
-//    background: rgba(0,0,0,0.65);
-//    display: flex;
-//    justify-content: center;
-//    align-items: center;
-//    z-index: 2000;
-//}
+#bestScoreOverlay.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
 
-//#bestScoreOverlay .panel {
-//    background: #fff;
-//    padding: 20px 30px;
-//    border-radius: 12px;
-//    width: 320px;
-//    text-align: center;
-//    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-//}
+#bestScoreOverlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
 
-//#bestScoreOverlay img {
-//    width: 100%;
-//    border-radius: 8px;
-//    margin-top: 10px;
-//}
+#bestScoreOverlay .panel {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  animation: popIn 0.25s ease-out;
+}
+
+#bestScoreOverlay img {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
 
 #endGamePanel {
   background: #fafafa;
@@ -523,6 +534,18 @@ body {
   opacity: 0.9;
 }
 
+.best-score-info {
+  margin-left: 20px;
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  display: inline-block;
+  vertical-align: middle;
+}
 
 #restartButton {
   padding: 10px 20px;
@@ -654,7 +677,9 @@ body {
         <button id="stepBtn" class="main-btn">Pas à Pas</button>
         <button id="helpBtn" class="main-btn">Aide</button>
         <button id="soundBtn" class="main-btn">Son : on</button>
-        <button id="showBestScoreBtn" class="btn">Meilleur score</button>
+
+        <span id="bestScoreTop" class="best-score-info">Aucun record</span>
+
       </div>
 
     </div> <!-- /topBar -->
@@ -686,9 +711,6 @@ body {
 
       <!-- CANVAS 600×600 -->
       <canvas id="gameCanvas" width="600" height="600"></canvas>
-
-      <div id="focusOverlay"></div>
-
       <div id="tutorialBubble"></div>
       <div id="jokerEffectContainer"></div>
 
@@ -755,6 +777,8 @@ body {
 <audio id="jokerLossSound" src="sounds/jokerloss.mp3" preload="auto"></audio>
 <audio id="endGameSound" src="sounds/end.mp3" preload="auto"></audio>
 <audio id="startGameSound" src="sounds/start.mp3" preload="none"></audio>
+<audio id="newRecordSound" src="sounds/new-record.mp3" preload="auto"></audio>
+
 
 <div id="flashContainer"></div>
 
@@ -766,19 +790,18 @@ body {
   </div>
 </div>
 
-//<div id="bestScoreOverlay" class="overlay hidden">
-//    <div class="panel">
-//        <h2> Meilleur score</h2>
+<div id="bestScoreOverlay" class="overlay hidden">
+  <div class="panel">
+    <h2>🎉 Nouveau record</h2>
 
-//        <div id="bestScoreContent">
-//            <!-- Contenu rempli en JS -->
-//        </div>
+    <div id="bestScoreContent"></div>
 
-//        <button id="closeBestScore" class="btn">Fermer</button>
-//    </div>
-//</div>
+    <button id="closeBestScore" class="main-btn">Fermer</button>
+  </div>
+</div>
 
 <script>
+
 // ===============================
 //   VARIABLES GLOBALES
 // ===============================
@@ -835,6 +858,141 @@ const tutorialSteps = [
   { message: "Exemple 3 : une ligne diagonale.",   start: { x: 12, y: 16 }, end: { x: 16, y: 12 } }
 ];
 
+// ===============================
+//   MEILLEUR SCORE
+// ===============================
+
+function saveBestScore(data) {
+  try {
+    localStorage.setItem("bestScoreData", JSON.stringify(data));
+  } catch(e) {
+    console.error("Erreur sauvegarde meilleur score :", e);
+  }
+}
+
+function loadBestScore() {
+  try {
+    const raw = localStorage.getItem("bestScoreData");
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) {
+    console.error("Erreur chargement meilleur score :", e);
+    return null;
+  }
+}
+
+function updateBestScoreTop() {
+    const best = loadBestScore();
+    const el = document.getElementById("bestScoreTop");
+
+    if (!el) return;
+
+    if (!best) {
+        el.textContent = "Record : —";
+    } else {
+        el.textContent =
+            `Record : ${best.score} (${best.returnsUsed} retours, ${best.jokersUsed} jokers)`;
+    }
+}
+
+function showBestScorePanel() {
+  const panel = document.getElementById("bestScoreContent");
+  if (!panel) return;
+
+  const best = loadBestScore();
+  if (!best) {
+    panel.innerHTML = "<p>Aucun record enregistré pour le moment.</p>";
+  } else {
+    const date = new Date(best.date).toLocaleString();
+    panel.innerHTML = `
+      <p><strong>Score :</strong> ${best.score}</p>
+      <p><strong>Date :</strong> ${date}</p>
+      <p><strong>Jokers utilisés :</strong> ${best.jokersUsed}</p>
+      <p><strong>Retours utilisés :</strong> ${best.returnsUsed}</p>
+      <p><strong>Durée :</strong> ${best.duration} sec</p>
+      ${best.screenshot ? `<img src="${best.screenshot}" alt="Screenshot du record">` : ""}
+    `;
+  }
+
+  document.getElementById("bestScoreOverlay").classList.remove("hidden");
+}
+
+document.getElementById("closeBestScore").addEventListener("click", () => {
+  document.getElementById("bestScoreOverlay").classList.add("hidden");
+});
+
+// ===============================
+//   SAUVEGARDE PARTIE EN COURS
+// ===============================
+
+function saveGameState() {
+  if (tutorialRunning) return; // jamais pendant le tutoriel
+
+  const data = {
+    activePoints: Array.from(activePoints),
+    permanentPoints: Array.from(permanentPoints),
+    usedEdges: Array.from(usedEdges),
+    validatedSegments, // tableau simple → OK
+    score,
+    jokersAvailable,
+    jokersTotal,
+    undoCount,
+    timerSeconds,
+    gameOver,
+    paused
+  };
+
+  try {
+    localStorage.setItem("currentGameState", JSON.stringify(data));
+  } catch (e) {
+    console.error("Erreur sauvegarde partie :", e);
+  }
+}
+
+function loadGameState() {
+  try {
+    const raw = localStorage.getItem("currentGameState");
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error("Erreur chargement partie :", e);
+    return null;
+  }
+}
+
+function restoreGameState() {
+  const data = loadGameState();
+  if (!data) return false;
+
+  // Restaurer les Sets correctement
+  activePoints = new Set(data.activePoints || []);
+  permanentPoints = new Set(data.permanentPoints || []);
+  usedEdges = new Set(data.usedEdges || []);
+
+  // Les tableaux simples restent des tableaux
+  validatedSegments = data.validatedSegments || [];
+
+  score = data.score ?? 0;
+  jokersAvailable = data.jokersAvailable ?? 0;
+  jokersTotal = data.jokersTotal ?? 0;
+  undoCount = data.undoCount ?? 0;
+  timerSeconds = data.timerSeconds ?? 0;
+  gameOver = data.gameOver ?? false;
+  paused = data.paused ?? false;
+
+  redrawEverything();
+  updateCounters();
+
+  return true;
+}
+
+
+// Sauvegarde automatique à chaque coup
+function autoSave() {
+  saveGameState();
+}
+
+// Sauvegarde à la fermeture
+window.addEventListener("beforeunload", saveGameState);
+
 
 // ===============================
 //   FONCTIONS AUDIO
@@ -848,6 +1006,12 @@ function playJokerGainSound() { if (!soundEnabled) return; const a=document.getE
 function playJokerLossSound() { if (!soundEnabled) return; const a=document.getElementById("jokerLossSound"); a.currentTime=0; a.play(); }
 function playEndGameSound() { if (!soundEnabled) return; const a=document.getElementById("endGameSound"); a.currentTime=0; a.play(); }
 function playStartGameSound() { if (!soundEnabled) return; const a=document.getElementById("startGameSound"); a.currentTime=0; a.play(); }
+function playNewRecordSound() {
+    if (!soundEnabled) return;
+    const a = document.getElementById("newRecordSound");
+    if (a) a.play();
+}
+
 
 function unlockAudio() {
   const ids = ["clickSound"];
@@ -954,6 +1118,7 @@ function startTimer() {
   timerRunning = true;
   timerInterval = setInterval(() => {
     timerSeconds++;
+    autoSave();
     document.getElementById("timerValue").textContent = formatTime(timerSeconds);
   }, 1000);
 }
@@ -1093,9 +1258,12 @@ function drawMaltaCross() {
   pts.forEach(p => {
     drawPoint(p.x, p.y);
     permanentPoints.add(`${p.x},${p.y}`);
+    autoSave();
     activePoints.add(`${p.x},${p.y}`);
+    autoSave();
   });
 }
+console.log("validatedSegments =", validatedSegments);
 
 function redrawEverything() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1130,7 +1298,9 @@ function edgesOfSegment(segmentKeys) {
 
 function gainJoker() {
   jokersAvailable++;
+  autoSave();
   jokersTotal++;
+  autoSave();
   updateCounters();
 
   const container = document.getElementById("jokerEffectContainer");
@@ -1278,6 +1448,7 @@ function undoLastMove() {
   const last = validatedSegments.pop();
 
   undoCount++;
+  autoSave();
   document.getElementById("undoCount").textContent = undoCount;
 
   score = Math.max(0, score - 1);
@@ -1307,6 +1478,7 @@ function undoLastMove() {
 
     if (!stillUsed && !permanentPoints.has(key)) {
       activePoints.delete(key);
+      autoSave();
     }
   });
 
@@ -1324,84 +1496,130 @@ function undoLastMove() {
 // ===============================
 
 function showEndGamePanel() {
-    document.getElementById("finalScore").textContent = "Score final : " + score;
+  console.log("showEndGamePanel exécuté");
 
-    playEndGameSound();
+  const finalScoreEl = document.getElementById("finalScore");
+  if (finalScoreEl) {
+    finalScoreEl.textContent = "Score final : " + score;
+  }
 
-    // Figer le jeu
-    gameOver = true;
+  playEndGameSound();
 
-    // Désactiver Pause et Retour
-    document.getElementById("pauseBtn").disabled = true;
-    document.getElementById("pauseBtn").classList.add("disabled");
+  gameOver = true;
+  autoSave();
 
-    document.getElementById("undoBtn").disabled = true;
-    document.getElementById("undoBtn").classList.add("disabled");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const undoBtn = document.getElementById("undoBtn");
 
-    
+  if (pauseBtn) {
+    pauseBtn.disabled = true;
+    pauseBtn.classList.add("disabled");
+  }
 
-    // Afficher le panneau de fin de partie
-    document.getElementById("endGameOverlay").classList.remove("hidden");
+  if (undoBtn) {
+    undoBtn.disabled = true;
+    undoBtn.classList.add("disabled");
+  }
+
+  const overlay = document.getElementById("endGameOverlay");
+  if (overlay) overlay.classList.remove("hidden");
 }
+
+function isBetterThan(a, b) {
+    if (!b) return true; // Aucun record existant
+
+    // 1. Score le plus élevé
+    if (a.score !== b.score)
+        return a.score > b.score;
+
+    // 2. À score égal → moins de retours
+    if (a.returnsUsed !== b.returnsUsed)
+        return a.returnsUsed < b.returnsUsed;
+
+    // 3. À retours égal → moins de jokers
+    return a.jokersUsed < b.jokersUsed;
+}
+
+
 function checkGameOver() {   
-  const moves = getPossibleMoves(); // ta fonction existante
+  const moves = getPossibleMoves();
   if (moves.length === 0) {
+
     gameOver = true;
+    autoSave();
     stopTimer();
+    localStorage.removeItem("currentGameState");
+
+    const current = {
+    score,
+    returnsUsed: undoCount,
+    jokersUsed: jokersTotal - jokersAvailable,
+    duration: timerSeconds,
+    screenshot: canvas.toDataURL("image/png"),
+    date: Date.now()
+    };
+
+const best = loadBestScore();
+const isNewRecord = isBetterThan(current, best);
+
+if (isNewRecord) {
+    saveBestScore(current);
+    updateBestScoreTop(); // Mise à jour du bandeau
+    playNewRecordSound();
+    showBestScorePanel();
+    return;
+}
+
+
     showEndGamePanel();
   }
 }
 
+
 function getPossibleMoves() {
-    const moves = [];
-    const directions = [
-        {dx: 1, dy: 0},   // horizontal
-        {dx: 0, dy: 1},   // vertical
-        {dx: 1, dy: 1},   // diagonale ↘
-        {dx: 1, dy: -1}   // diagonale ↗
-    ];
+  const moves = [];
+  const directions = [
+    {dx: 1, dy: 0},
+    {dx: 0, dy: 1},
+    {dx: 1, dy: 1},
+    {dx: 1, dy: -1}
+  ];
 
-    for (let key of activePoints) {
-        const [x, y] = key.split(",").map(Number);
+  for (let key of activePoints) {
+    const [x, y] = key.split(",").map(Number);
 
-        for (let dir of directions) {
-            const segment = [];
+    for (let dir of directions) {
+      const segment = [];
 
-            // Construire les 5 points du segment
-            for (let i = 0; i < 5; i++) {
-                const px = x + i * dir.dx;
-                const py = y + i * dir.dy;
+      for (let i = 0; i < 5; i++) {
+        const px = x + i * dir.dx;
+        const py = y + i * dir.dy;
 
-                // Hors grille
-                if (px < 0 || px >= size || py < 0 || py >= size) {
-                    segment.length = 0;
-                    break;
-                }
-
-                segment.push(`${px},${py}`);
-            }
-
-            if (segment.length !== 5) continue;
-
-            // Vérifier les edges
-            const edges = edgesOfSegment(segment);
-            const overlaps = edges.some(e => usedEdges.has(e));
-            if (overlaps) continue;
-
-            // Vérifier le nombre de points actifs
-            const activeCount = segment.filter(p => activePoints.has(p)).length;
-
-            // Règles des jokers (non destructives)
-            if (activeCount < 2) continue;
-            if (activeCount === 3 && jokersAvailable < 1) continue;
-            if (activeCount === 2 && jokersAvailable < 2) continue;
-
-            // Si on arrive ici → coup jouable
-            moves.push(segment);
+        if (px < 0 || px >= size || py < 0 || py >= size) {
+          segment.length = 0;
+          break;
         }
-    }
 
-    return moves;
+        segment.push(`${px},${py}`);
+      }
+
+      if (segment.length !== 5) continue;
+
+      const edges = edgesOfSegment(segment);
+      const overlaps = edges.some(e => usedEdges.has(e));
+      if (overlaps) continue;
+
+      const activeCount = segment.filter(p => activePoints.has(p)).length;
+
+      if (activeCount < 2) continue;
+      if (activeCount === 3 && jokersAvailable < 1) continue;
+      if (activeCount === 2 && jokersAvailable < 2) continue;
+
+      moves.push(segment);
+    }
+  }
+
+  return moves;
 }
 
 // ===============================
@@ -1432,6 +1650,10 @@ function togglePause() {
 // ===============================
 //   RÉINITIALISATION DU JEU
 // ===============================
+
+function startNewGame() {
+  resetGameState();
+}
 
 function resetGameState() {
 
@@ -1562,6 +1784,7 @@ function drawSegmentProgressively(start, end, onComplete, isTutorial = false) {
       });
 
       score++;
+      autoSave();
       updateCounters();
       appendHistoryEntry(segment, 4);
       updateTutorialButtonState();
@@ -1632,16 +1855,21 @@ function initGame() {
     undoBtn.classList.remove("disabled");
   }
 
-  drawGrid();
-  console.log("GRID OK");
+  // On tente de restaurer la partie
+  const restored = restoreGameState();
 
+  // Si la partie restaurée est terminée → on démarre une nouvelle partie
+  if (!restored || gameOver) {
+    startNewGame();
+  }
+
+  drawGrid();
   drawMaltaCross();
-  console.log("MALTA OK");
 
   updateCounters();
   updateTutorialButtonState();
+  updateBestScoreTop();
 }
-
 
 // ===============================
 //   DOMContentLoaded
@@ -1651,22 +1879,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Références DOM essentielles (globales)
   canvas = document.getElementById("gameCanvas");
+console.log("canvas =", canvas);
+
   ctx = canvas.getContext("2d");
   tutorialBtn = document.getElementById("stepBtn");
 
+console.log("closeHelpBtn =", document.getElementById("closeHelpBtn"));
+
 
   // === Positionnement des repères
-  document.querySelectorAll('#topLabels span').forEach(span => {
-  const pos = parseInt(span.textContent, 10);
-  const x = offset + (pos - 1) * spacing;
-  span.style.left = (x - 6) + 'px';
-});
+const topLabels = document.querySelectorAll('#topLabels span');
+const leftLabels = document.querySelectorAll('#leftLabels span');
 
-document.querySelectorAll('#leftLabels span').forEach(span => {
-  const pos = parseInt(span.textContent, 10);
-  const y = offset + (pos - 1) * spacing;
-  span.style.top = (y - 6) + 'px';
-});
+if (topLabels.length && leftLabels.length) {
+
+console.log("offset =", offset);
+console.log("spacing =", spacing);
+
+  topLabels.forEach(span => {
+    const pos = Number(span.textContent);
+    if (!Number.isFinite(pos)) return;
+    const x = offset + (pos - 1) * spacing;
+    span.style.left = `${x - 6}px`;
+  });
+
+  leftLabels.forEach(span => {
+    const pos = Number(span.textContent);
+    if (!Number.isFinite(pos)) return;
+    const y = offset + (pos - 1) * spacing;
+    span.style.top = `${y - 6}px`;
+  });
+
+}
 
 
   // === Bouton OK fin de partie ===
@@ -1739,6 +1983,7 @@ document.querySelectorAll('#leftLabels span').forEach(span => {
       checkGameOver();
     }
   });
+
 
   // ===============================
   //   BOUTONS
