@@ -678,7 +678,7 @@ body {
         <button id="helpBtn" class="main-btn">Aide</button>
         <button id="soundBtn" class="main-btn">Son : on</button>
 
-        <span id="bestScoreTop" class="best-score-info">Aucun record</span>
+        <span id="bestScoreTopValue" class="best-score-info">Aucun record</span>
 
       </div>
 
@@ -770,6 +770,7 @@ body {
 
 <!-- === SONS === -->
 <audio id="clickSound" src="sounds/click.mp3" preload="auto"></audio>
+<audio id="undoSound" src="sounds/undo.mp3" preload="auto"></audio>
 <audio id="errorSound" src="sounds/error.mp3" preload="auto"></audio>
 <audio id="successSound" src="sounds/success.mp3" preload="auto"></audio>
 <audio id="tutorialSound" src="sounds/tutorial.mp3" preload="auto"></audio>
@@ -881,17 +882,16 @@ function loadBestScore() {
 }
 
 function updateBestScoreTop() {
-    const best = loadBestScore();
-    const el = document.getElementById("bestScoreTop");
+  const el = document.getElementById("bestScoreTopValue");
+  if (!el) return;
 
-    if (!el) return;
+  const best = loadBestScore();
 
-    if (!best) {
-        el.textContent = "Record : —";
-    } else {
-        el.textContent =
-            `Record : ${best.score} (${best.returnsUsed} retours, ${best.jokersUsed} jokers)`;
-    }
+  if (!best || typeof best.score !== "number") {
+    el.textContent = "Aucun record";
+  } else {
+    el.textContent = "Record : " + best.score;
+  }
 }
 
 function showBestScorePanel() {
