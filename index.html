@@ -355,6 +355,16 @@ body {
   border-radius: 4px;
 }
 
+.best-score-info {
+  font-size: 1.2em; /* augmente légèrement tout le bandeau */
+}
+
+.best-score-info .emoji {
+  font-size: 1.4em; /* augmente uniquement les emojis */
+  vertical-align: -2px; /* les aligne mieux avec le texte */
+}
+
+
 /* === JOKER EFFECTS === */
 
 #jokerEffectContainer {
@@ -678,7 +688,7 @@ body {
         <button id="helpBtn" class="main-btn">Aide</button>
         <button id="soundBtn" class="main-btn">Son : on</button>
 
-        <span id="bestScoreTopValue" class="best-score-info">Aucun record</span>
+        <span id="bestScoreTop" class="best-score-info">Aucun record</span>
 
       </div>
 
@@ -770,7 +780,6 @@ body {
 
 <!-- === SONS === -->
 <audio id="clickSound" src="sounds/click.mp3" preload="auto"></audio>
-<audio id="undoSound" src="sounds/undo.mp3" preload="auto"></audio>
 <audio id="errorSound" src="sounds/error.mp3" preload="auto"></audio>
 <audio id="successSound" src="sounds/success.mp3" preload="auto"></audio>
 <audio id="tutorialSound" src="sounds/tutorial.mp3" preload="auto"></audio>
@@ -882,16 +891,30 @@ function loadBestScore() {
 }
 
 function updateBestScoreTop() {
-  const el = document.getElementById("bestScoreTopValue");
+  const el = document.getElementById("bestScoreTop");
   if (!el) return;
 
   const best = loadBestScore();
-
-  if (!best || typeof best.score !== "number") {
+  if (!best) {
     el.textContent = "Aucun record";
-  } else {
-    el.textContent = "Record : " + best.score;
+    return;
   }
+
+  const score = Number(best.score);
+  if (isNaN(score)) {
+    el.textContent = "Aucun record";
+    return;
+  }
+
+  const minutes = Math.floor(best.duration / 60);
+  const seconds = best.duration % 60;
+  const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+  el.textContent =
+    `🏆 ${score} lignes — ` +
+    `↩️${best.returnsUsed} | ` +
+    `🃏${best.jokersUsed} | ` +
+    `⏱️${timeStr}`;
 }
 
 function showBestScorePanel() {
@@ -902,19 +925,24 @@ function showBestScorePanel() {
   if (!best) {
     panel.innerHTML = "<p>Aucun record enregistré pour le moment.</p>";
   } else {
-    const date = new Date(best.date).toLocaleString();
-    panel.innerHTML = `
-      <p><strong>Score :</strong> ${best.score}</p>
-      <p><strong>Date :</strong> ${date}</p>
-      <p><strong>Jokers utilisés :</strong> ${best.jokersUsed}</p>
-      <p><strong>Retours utilisés :</strong> ${best.returnsUsed}</p>
-      <p><strong>Durée :</strong> ${best.duration} sec</p>
-      ${best.screenshot ? `<img src="${best.screenshot}" alt="Screenshot du record">` : ""}
-    `;
+
+    const score = Number(best.score);
+
+    // Formatage du temps
+    const minutes = Math.floor(best.duration / 60);
+    const seconds = best.duration % 60;
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+    panel.innerHTML =
+      `<span class="emoji">🏆</span> ${score} lignes — ` +
+      `<span class="emoji">↩️</span>${best.returnsUsed} | ` +
+      `<span class="emoji">🃏</span>${best.jokersUsed} | ` +
+      `<span class="emoji">⏱️</span>${timeStr}`;
   }
 
   document.getElementById("bestScoreOverlay").classList.remove("hidden");
 }
+
 
 document.getElementById("closeBestScore").addEventListener("click", () => {
   document.getElementById("bestScoreOverlay").classList.add("hidden");
