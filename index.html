@@ -355,15 +355,130 @@ body {
   border-radius: 4px;
 }
 
+/* Panneau du record */
+
+#bestScoreOverlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#bestScoreContent {
+  margin: 0 auto !important;
+}
+
+#bestScoreContent {
+  width: auto;
+  max-width: 640px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.record-line {
+  display: inline-block;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1em;
+  white-space: nowrap;
+  width: auto;
+  padding: 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+}	
+
+/* Bloc icône + valeur dans le panneau */
+.record-line .block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Icônes dans le panneau */
+.record-line .emoji {
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+
+/* Valeurs dans le panneau */
+.record-line .value {
+  font-size: 1em;
+  line-height: 1;
+}
+
+/* Bouton Fermer */
+#bestScoreContent button {
+  align-self: center;
+  padding: 8px 16px;
+  font-size: 1em;
+  margin-top: 8px;
+}
+
+/* Bandeau du haut */
 .best-score-info {
-  font-size: 1.2em; /* augmente légèrement tout le bandeau */
+  font-size: 1.2em;
 }
 
 .best-score-info .emoji {
-  font-size: 1.4em; /* augmente uniquement les emojis */
-  vertical-align: -2px; /* les aligne mieux avec le texte */
+  font-size: 1.4em;
+  vertical-align: -2px;
+}
+#endGameOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
 }
 
+#endGameOverlay.hidden {
+  display: none;
+}
+
+#bestScoreOverlay.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+#bestScoreOverlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+#bestScoreOverlay .panel {
+  min-width: 460px;
+  width: auto;
+  max-width: 640px;
+  padding: 20px 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  animation: popIn 0.25s ease-out;
+  background-color: #fff;
+  isolation: isolate;
+}
+
+#bestScoreOverlay img {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+}
 
 /* === JOKER EFFECTS === */
 
@@ -458,56 +573,6 @@ body {
   filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
 }
 
-#endGameOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-}
-
-#endGameOverlay.hidden {
-  display: none;
-}
-
-#bestScoreOverlay.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.65);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-#bestScoreOverlay.hidden {
-  display: none !important;
-  pointer-events: none !important;
-}
-
-#bestScoreOverlay .panel {
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 12px;
-  width: 320px;
-  text-align: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  animation: popIn 0.25s ease-out;
-}
-
-#bestScoreOverlay img {
-  width: 100%;
-  border-radius: 8px;
-  margin-top: 10px;
-}
 
 @keyframes popIn {
   from { transform: scale(0.8); opacity: 0; }
@@ -895,26 +960,21 @@ function updateBestScoreTop() {
   if (!el) return;
 
   const best = loadBestScore();
-  if (!best) {
+  if (!best || isNaN(Number(best.score))) {
     el.textContent = "Aucun record";
     return;
   }
 
   const score = Number(best.score);
-  if (isNaN(score)) {
-    el.textContent = "Aucun record";
-    return;
-  }
-
   const minutes = Math.floor(best.duration / 60);
   const seconds = best.duration % 60;
   const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
-  el.textContent =
-    `🏆 ${score} lignes — ` +
-    `↩️${best.returnsUsed} | ` +
-    `🃏${best.jokersUsed} | ` +
-    `⏱️${timeStr}`;
+  el.innerHTML =
+    `<span class="emoji">🏆</span> ${score} lignes ` +
+    `<span class="emoji">↩️</span>${best.returnsUsed} ` +
+    `<span class="emoji">🃏</span>${best.jokersUsed} ` +
+    `<span class="emoji">⏱️</span>${timeStr}`;
 }
 
 function showBestScorePanel() {
@@ -925,19 +985,17 @@ function showBestScorePanel() {
   if (!best) {
     panel.innerHTML = "<p>Aucun record enregistré pour le moment.</p>";
   } else {
-
     const score = Number(best.score);
-
-    // Formatage du temps
     const minutes = Math.floor(best.duration / 60);
     const seconds = best.duration % 60;
     const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
-    panel.innerHTML =
-      `<span class="emoji">🏆</span> ${score} lignes — ` +
-      `<span class="emoji">↩️</span>${best.returnsUsed} | ` +
-      `<span class="emoji">🃏</span>${best.jokersUsed} | ` +
-      `<span class="emoji">⏱️</span>${timeStr}`;
+    panel.innerHTML = `
+  <div class="record-line">
+    🏆 ${score} lignes — ${best.returnsUsed} retour${best.returnsUsed > 1 ? "s" : ""} — ${best.jokersUsed} joker${best.jokersUsed > 1 ? "s" : ""} — ${timeStr}
+  </div>
+`;
+
   }
 
   document.getElementById("bestScoreOverlay").classList.remove("hidden");
@@ -1057,42 +1115,7 @@ function unlockAudio() {
 ////   SAUVEGARDE
 //// ===============================
 
-//function saveBestScore(data) {
-//  try { localStorage.setItem("bestScoreData", JSON.stringify(data)); }
-//  catch(e){ console.error("Erreur sauvegarde :", e); }
-//}
 
-//function loadBestScore() {
-//  try {
-//    const raw = localStorage.getItem("bestScoreData");
-//    return raw ? JSON.parse(raw) : null;
-//  } catch(e){
-//    console.error("Erreur chargement :", e);
- //   return null;
-//  }
-//}
-
-//function showBestScorePanel() {
-//  const panel = document.getElementById("bestScoreContent");
-//  if (!panel) return; // Empêche l'exécution prématurée
-
-//  const best = loadBestScore();
-//  if (!best) {
-//    panel.innerHTML = "<p>Aucun record enregistré pour le moment.</p>";
-//  } else {
-//    const date = new Date(best.date).toLocaleString();
-//    panel.innerHTML = `
-//      <p><strong>Score :</strong> ${best.score}</p>
-//      <p><strong>Date :</strong> ${date}</p>
-//      <p><strong>Jokers utilisés :</strong> ${best.jokersUsed}</p>
-//      <p><strong>Retours utilisés :</strong> ${best.returnsUsed}</p>
-//      <p><strong>Durée :</strong> ${best.duration} sec</p>
-//      ${best.screenshot ? `<img src="${best.screenshot}" alt="Screenshot du record">` : ""}
-//    `;
-//  }
-
-//  document.getElementById("bestScoreOverlay").classList.remove("hidden");
-//}
 
 // ===============================
 //   UTILITAIRES UI
@@ -1252,7 +1275,7 @@ function getNearestPoint(mx, my) {
   }
 
   // Tolérance : 12 px
-  if (bestDist <= 12) return best;
+  if (bestDist <= 22) return best;
 
   return null;
 }
