@@ -10,10 +10,11 @@
   <style>
   /* === Mise en page générale === */
 
+/* === GLOBAL === */
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-
   background-image: url("images/monfond.jpg");
   background-size: cover;
   background-position: center;
@@ -32,9 +33,6 @@ body {
   position: sticky;
   top: 0;
   z-index: 10000;
-}
-
-#topBar {
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -58,10 +56,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-left: 00px;
   text-align: right;
   font-size: 15px;
-  width: auto;
   flex-shrink: 0;
 }
 
@@ -69,7 +65,7 @@ body {
   font-weight: 600;
 }
 
-/* === BOUTONS === */
+/* === BUTTONS === */
 
 #buttonsArea {
   display: flex;
@@ -95,38 +91,53 @@ body {
 }
 
 .main-btn.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-/* === ZONE PRINCIPALE === */
+#closeHelpBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+#helpContent {
+  background: #fff;
+  width: 600px;
+  max-width: 90%;
+  max-height: 80vh; /* empêche de dépasser sous le bandeau */
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  position: relative;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+
+.aide-separator {
+  width: 100%;
+  height: 1px;
+  background: #ddd;
+  margin: 16px 0;
+}
+
+/* === MAIN AREA === */
 
 #mainArea {
   display: flex;
   flex: 1;
-  overflow: visible;
   align-items: flex-start;
 }
 
-
-
-/* === BOARD WRAPPER === */
+/* === BOARD === */
 
 #boardWrapper {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
   padding-top: 20px;
   padding-left: 60px;
-  position: relative;
-  box-sizing: border-box;
-  min-height: 600px; /* ← ajusté */
+  min-height: 600px;
 }
-
-/* === CADRE EN BOIS === */
 
 .board-frame {
   border: 30px solid transparent;
@@ -134,49 +145,36 @@ body {
   border-image: url("images/plateau.jpg") 30 round;
 }
 
-/* === CANVAS CONTAINER === */
-
 #canvasContainer {
   position: relative;
-  width: 600px;   /* ← ajusté */
-  height: 600px;  /* ← ajusté */
-  z-index: 1;
+  width: 600px;
+  height: 600px;
 }
 
 #canvasContainer::before {
   content: "";
   position: absolute;
-
-  width: 680px;   /* ← ajusté proportionnellement */
-  height: 680px;  /* ← ajusté */
-
+  width: 680px;
+  height: 680px;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-
-  background: radial-gradient(
-    circle,
+  background: radial-gradient(circle,
     rgba(255,255,255,0.25) 40%,
     rgba(0,0,0,0.25) 100%
   );
-
   pointer-events: none;
-  z-index: 0;
 }
-
-@keyframes shimmerMove {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 
 #gameCanvas {
+  width: 600px !important;
+  height: 600px !important;
+  background: #fafafa;
+  display: block;
   position: relative;
-  z-index: 1;
 }
 
-/* Repères */
+/* === LABELS === */
 
 #topLabels, #leftLabels {
   position: absolute;
@@ -189,32 +187,17 @@ body {
   color: #444;
 }
 
-/* Repères du haut */
 #topLabels {
   top: -22px;
-  left: 0;
   width: 700px;
 }
 
-/* Repères de gauche */
 #leftLabels {
   left: -20px;
-  top: 0;
   height: 700px;
 }
 
-/* === CANVAS === */
-
-#gameCanvas {
-  width: 600px !important;
-  height: 600px !important;
-  background: #fafafa;
-  display: block;
-  position: relative;
-  z-index: 2;
-}
-
-/* === FLASH MESSAGE ===*/
+/* === FLASH MESSAGES === */
 
 #flashContainer {
   position: fixed;
@@ -229,7 +212,7 @@ body {
 }
 
 .flashMessage {
-  background: rgba(30, 30, 30, 0.92); /* noir doux */
+  background: rgba(30, 30, 30, 0.92);
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   color: #fff;
   padding: 8px 16px;
@@ -245,34 +228,25 @@ body {
   transform: translateY(0);
 }
 
-
-/* === PANEL HISTORIQUE === */
+/* === SIDE PANEL === */
 
 #sidePanel {
   margin-top: 10px;
   width: 320px;
-  min-width: 320px;
-  max-width: 320px;
-  background: #fafafa; /* gris très clair */
-  border-right: 1px solid #e0e0e0;
-  border-left: 1px solid #e0e0e0;
-  padding: 20px 12px 10px 12px;
-  box-sizing: border-box;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  padding: 20px 12px 10px;
   box-shadow: 0 0 8px rgba(0,0,0,0.25);
   border-radius: 8px;
 }
 
-/* === TITRE HISTORIQUE === */
-
 #historyTitle {
-  color: #222; /* noir doux */
+  color: #222;
   font-weight: 600;
-  margin: 0 0 12px 0;
+  margin: 0 0 12px;
   padding-bottom: 6px;
   border-bottom: 1px solid #e0e0e0;
 }
-
-/* === LISTE HISTORIQUE === */
 
 #historyPanel {
   max-height: 700px;
@@ -288,86 +262,72 @@ body {
 
 #historyList li {
   padding: 4px 0;
-  color: #444; /* gris foncé lisible */
   border-bottom: 1px dashed #e6e6e6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Couleurs harmonisées pour les gains/pertes */
+#historyList li.gain { color: #008a00; font-weight: 600; }
+#historyList li.loss { color: #cc0000; font-weight: 600; }
+#historyList li.neutral { color: #222; }
 
-#historyList li.gain {
-  color: #008a00; /* vert vif mais propre */
-  font-weight: 600;
-}
-
-#historyList li.loss {
-  color: #cc0000; /* rouge net */
-  font-weight: 600;
-}
-
-#historyList li.neutral {
-  color: #222; /* noir doux */
-}
-	
 /* === HELP OVERLAY === */
 
 #helpOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: none;
-  justify-content: center;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none; /* masqué par défaut */
   align-items: center;
-  z-index: 1000;
+  justify-content: center;
+  z-index: 2000;
 }
 
-.aide-separator {
-  border-top: 1px solid #ccc;
-  margin: 16px 0;
+#helpOverlay.hidden {
+  display: none !important;
 }
 
-
-#helpContent {
-  background: white;
-  padding: 20px;
-  width: 600px;
-  max-width: 90%;
-  border-radius: 8px;
-  position: relative;
-  box-sizing: border-box;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.close-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #d00000;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-/* Panneau du record */
-
-#bestScoreOverlay {
+.overlay {
+  position: fixed;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
 }
 
-#bestScoreContent {
-  margin: 0 auto !important;
+.overlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
 }
 
+/* === END GAME PANEL === */
+
+#endGamePanel {
+  background: #fafafa;
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.15);
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+/* === BEST SCORE PANEL (restauration complète) === */
+
+#bestScoreOverlay .panel {
+  min-width: 460px;
+  max-width: 640px;
+  padding: 20px 30px;
+  border-radius: 12px;
+  text-align: center;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  animation: popIn 0.25s ease-out;
+  isolation: isolate;
+}
+	
 #bestScoreContent {
   width: auto;
   max-width: 640px;
@@ -379,38 +339,34 @@ body {
   gap: 24px;
 }
 
+#tutorialBubble {
+  position: absolute;
+  top: 20px;                          /* en haut du plateau */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.92); /* même style que les flash messages */
+  color: #fff;                        /* texte blanc */
+  padding: 14px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  font-size: 16px;                    /* lisible */
+  font-weight: 500;                   /* lisible */
+  max-width: 85%;
+  text-align: center;
+  z-index: 3000;
+  opacity: 0;                         /* pour l’animation JS */
+  transition: opacity 0.3s ease;
+  pointer-events: none;               /* ne bloque pas les clics */
+  display: none;
+}
+
 .record-line {
   display: inline-block;
-  justify-content: center;
-  align-items: center;
+  margin: 0 auto;
   font-size: 1.1em;
   white-space: nowrap;
-  width: auto;
-  padding: 0;
-  margin: 0 auto;
-  box-sizing: border-box;
-}	
-
-/* Bloc icône + valeur dans le panneau */
-.record-line .block {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
-/* Icônes dans le panneau */
-.record-line .emoji {
-  font-size: 1.2em;
-  vertical-align: middle;
-}
-
-/* Valeurs dans le panneau */
-.record-line .value {
-  font-size: 1em;
-  line-height: 1;
-}
-
-/* Bouton Fermer */
 #bestScoreContent button {
   align-self: center;
   padding: 8px 16px;
@@ -418,248 +374,23 @@ body {
   margin-top: 8px;
 }
 
-/* Bandeau du haut */
-.best-score-info {
-  font-size: 1.2em;
-}
+/* === ANIMATIONS === */
 
-.best-score-info .emoji {
-  font-size: 1.4em;
-  vertical-align: -2px;
-}
-#endGameOverlay.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-}
-
-#endGameOverlay.hidden {
-  display: none !important;
-  pointer-events: none !important;
-}
-
-#bestScoreOverlay.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.65);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-#bestScoreOverlay.hidden {
-  display: none !important;
-  pointer-events: none !important;
-}
-
-#bestScoreOverlay .panel {
-  min-width: 460px;
-  width: auto;
-  max-width: 640px;
-  padding: 20px 30px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  animation: popIn 0.25s ease-out;
-  background-color: #fff;
-  isolation: isolate;
-}
-
-#bestScoreOverlay img {
-  width: 100%;
-  border-radius: 8px;
-  margin-top: 10px;
-}
-
-.overlay {
-  opacity: 1;
-  transform: none;
-}
-
-
-/* === JOKER EFFECTS === */
-
-#jokerEffectContainer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.joker-float,
-.joker-loss {
-  position: absolute;
-  font-size: 20px;
-  font-weight: bold;
-  animation: floatUp 1s ease-out forwards;
-}
-
-.joker-float {
-  color: #00aa00;
-}
-
-.joker-loss {
-  color: #d00000;
-}
-
-@keyframes floatUp {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-40px);
-  }
-}
-
-/* === CLIGNOTEMENT === */
-
-.blink {
-  animation: blinkAnim 0.4s ease-in-out 2;
-}
-
-
-  @keyframes blinkAnim {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.4);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-/* === Bulle tutoriel stylée === */
-#tutorialBubble {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  max-width: 400px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 15px;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  border: 1px solid #ddd;
-  display: none;
-  z-index: 50;
-  line-height: 1.3;
-
-  /* fade-in / fade-out */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* flèche triangulaire */
-#tutorialBubble::after {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 20px;
-  border-width: 0 10px 10px 10px;
-  border-style: solid;
-  border-color: transparent transparent rgba(255,255,255,0.95) transparent;
-  filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
-}
-
-
-@keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-
-#endGamePanel {
-  background: #fafafa;
-  padding: 30px 40px;
-  border-radius: 10px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.15);
-  text-align: center;
-  border: 1px solid #e0e0e0;
-}
-
-#endGamePanel h2 {
-  margin-top: 0;
-  color: #222;
-}
-
-#endGamePanel p {
-  font-size: 18px;
-  margin: 10px 0 20px 0;
-  color: #444;
-}
-
-#endGamePanel .main-btn {
-  background-color: #0078d4;
-  color: white;
-}
-
-#endGamePanel .main-btn:hover {
-  background-color: #006cc0; /* bleu plus sombre */
-  opacity: 0.9;
-}
-
-.best-score-info {
-  margin-left: 20px;
-  font-weight: 600;
-  color: #333;
-  font-size: 16px;
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-  display: inline-block;
-  vertical-align: middle;
-}
-
-#restartButton {
-  padding: 10px 20px;
-  background: #007acc;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-#restartButton:hover {
-  background: #005fa3;
-}
-
-#closeEndGame:hover {
-    background-color: var(--accent-color-hover);
-    transform: translateY(-2px);
-}
-
-#closeEndGame:active {
-    transform: translateY(0);
-}
-
-.hidden {
+.fade-hidden {
   opacity: 0;
   transform: translateY(-20px) scale(0.98);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-/* === Animation premium : glissé + rebond amorti === */
+.blink {
+  animation: blinkAnim 0.4s ease-in-out 2;
+}
+
+@keyframes blinkAnim {
+  50% { transform: scale(1.4); }
+}
+
+/* === Animation premium : arrivée du plateau === */
 
 .slide-in-premium {
   opacity: 0;
@@ -672,10 +403,6 @@ body {
 .slide-in-premium.show {
   opacity: 1;
   transform: translateX(0) rotate(0deg) scale(1);
-}
-
-/* Rebond léger après l’arrivée */
-.slide-in-premium.show {
   animation: boardBounce 0.35s ease-out 1 1.8s;
 }
 
@@ -685,6 +412,9 @@ body {
   70%  { transform: translateX(4px) scale(0.995); }
   100% { transform: translateX(0) scale(1); }
 }
+
+
+/* === MODAL === */
 
 .modal {
   position: fixed;
@@ -708,7 +438,6 @@ body {
 #readyModal {
   z-index: 200000 !important;
 }
-
 
   </style>
 </head>
@@ -809,10 +538,10 @@ body {
 
 
   <!-- === HELP OVERLAY === -->
-<div id="helpOverlay">
+<div id="helpOverlay" class="overlay hidden">
   <div id="helpContent">
 
-    <button class="close-btn" id="closeHelpBtn">Fermer</button>
+    <button class="main-btn" id="closeHelpBtn">Fermer</button>
 
     <h2>📖 Aide</h2>
     <div class="aide-separator"></div>
@@ -1294,6 +1023,13 @@ function getNearestPoint(mx, my) {
 // ===============================
 
 function drawMaltaCross() {
+  permanentPoints.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+    drawPoint(x, y);
+  });
+}
+
+function initMaltaCross() {
   let x = 0, y = 0;
   const pts = [];
   const add = (px, py) => pts.push({ x: px, y: py });
@@ -1312,17 +1048,15 @@ function drawMaltaCross() {
   }
 
   const offsetX = 15, offsetY = 12;
-  pts.forEach(p => { p.x += offsetX; p.y += offsetY; });
 
   pts.forEach(p => {
-    drawPoint(p.x, p.y);
-    permanentPoints.add(`${p.x},${p.y}`);
-    autoSave();
-    activePoints.add(`${p.x},${p.y}`);
-    autoSave();
+    const key = `${p.x + offsetX},${p.y + offsetY}`;
+    permanentPoints.add(key);
+    activePoints.add(key);
   });
+
+  autoSave();
 }
-console.log("validatedSegments =", validatedSegments);
 
 function redrawEverything() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1554,6 +1288,26 @@ function undoLastMove() {
 //   FIN DE PARTIE
 // ===============================
 
+function finalizeGameState() {
+  gameOver = true;
+  autoSave();
+  stopTimer();
+  localStorage.removeItem("currentGameState");
+
+  const pauseBtn = document.getElementById("pauseBtn");
+  const undoBtn  = document.getElementById("undoBtn");
+
+  if (pauseBtn) {
+    pauseBtn.disabled = true;
+    pauseBtn.classList.add("disabled");
+  }
+
+  if (undoBtn) {
+    undoBtn.disabled = true;
+    undoBtn.classList.add("disabled");
+  }
+}
+
 function showEndGamePanel() {
   console.log("showEndGamePanel exécuté");
 
@@ -1726,7 +1480,10 @@ function togglePause() {
 
 function startNewGame() {
   resetGameState();
+  initMaltaCross();
+  redrawEverything();
 }
+
 
 function resetGameState() {
 
@@ -1936,9 +1693,6 @@ function initGame() {
     startNewGame();
   }
 
-  drawGrid();
-  drawMaltaCross();
-
   updateCounters();
   updateTutorialButtonState();
   updateBestScoreTop();
@@ -1957,17 +1711,11 @@ console.log("canvas =", canvas);
   ctx = canvas.getContext("2d");
   tutorialBtn = document.getElementById("stepBtn");
 
-console.log("closeHelpBtn =", document.getElementById("closeHelpBtn"));
-
-
   // === Positionnement des repères
 const topLabels = document.querySelectorAll('#topLabels span');
 const leftLabels = document.querySelectorAll('#leftLabels span');
 
 if (topLabels.length && leftLabels.length) {
-
-console.log("offset =", offset);
-console.log("spacing =", spacing);
 
   topLabels.forEach(span => {
     const pos = Number(span.textContent);
@@ -1993,21 +1741,22 @@ console.log("spacing =", spacing);
 
   // === Bouton PAS À PAS ===
   tutorialBtn.addEventListener("click", () => {
-    playClickSound();
-    if (tutorialRunning) return;
+  playClickSound();
+  if (tutorialRunning) return;
 
-    gameStarted = true;
+  localStorage.removeItem("currentGameState");  // ← indispensable
 
-    const modal = document.getElementById("readyModal");
-    if (modal) modal.style.display = "none";
+  const modal = document.getElementById("readyModal");
+  if (modal) modal.style.display = "none";
 
-    resetGameState();
-    initGame();
-    runTutorial();
-  });
+  resetGameState();
+  initMaltaCross();
+  redrawEverything();
+  initGame();
+  runTutorial();
+});
 
   redrawEverything();
-  console.log("CTX OK");
 
   // ===============================
   //   LISTENER : CLIC SUR LA GRILLE
@@ -2063,10 +1812,12 @@ console.log("spacing =", spacing);
   // ===============================
 
   document.getElementById("resetBtn").addEventListener("click", () => {
-    playClickSound();
-    resetGameState();
-    initGame();
-  });
+  playClickSound();
+  localStorage.removeItem("currentGameState");  // ← indispensable
+  startNewGame();
+  initGame();
+});
+
 
   document.getElementById("undoBtn").addEventListener("click", () => {
     playClickSound();
@@ -2079,14 +1830,27 @@ console.log("spacing =", spacing);
   });
 
   document.getElementById("helpBtn").addEventListener("click", () => {
-    playClickSound();
-    document.getElementById("helpOverlay").style.display = "flex";
-  });
+  playClickSound();
+  const overlay = document.getElementById("helpOverlay");
+  if (!overlay) {
+    console.error("helpOverlay introuvable dans le DOM");
+    return;
+  }
+  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
+});
 
-  document.getElementById("closeHelpBtn").addEventListener("click", () => {
-    playClickSound();
-    document.getElementById("helpOverlay").style.display = "none";
-  });
+document.getElementById("closeHelpBtn").addEventListener("click", () => {
+  playClickSound();
+  const overlay = document.getElementById("helpOverlay");
+  if (!overlay) {
+    console.error("helpOverlay introuvable dans le DOM");
+    return;
+  }
+  overlay.style.display = "none";
+  overlay.classList.add("hidden");
+});
+
 
   document.getElementById("soundBtn").addEventListener("click", (e) => {
     playClickSound();
