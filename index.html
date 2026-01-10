@@ -5,6 +5,7 @@
   <title>Morpion Solitaire – Croix de Malte</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preload" as="image" href="images/monfond.jpg">
+  <link rel="icon" type="image/png" href="favicon.png?v=1">
 
   <style>
   /* === Mise en page générale === */
@@ -426,7 +427,7 @@ body {
   font-size: 1.4em;
   vertical-align: -2px;
 }
-#endGameOverlay {
+#endGameOverlay.overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -440,7 +441,8 @@ body {
 }
 
 #endGameOverlay.hidden {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
 }
 
 #bestScoreOverlay.overlay {
@@ -479,6 +481,12 @@ body {
   border-radius: 8px;
   margin-top: 10px;
 }
+
+.overlay {
+  opacity: 1;
+  transform: none;
+}
+
 
 /* === JOKER EFFECTS === */
 
@@ -857,7 +865,7 @@ body {
 
 <div id="flashContainer"></div>
 
-<div id="endGameOverlay" class="hidden">
+<div id="endGameOverlay" class="overlay hidden">
   <div id="endGamePanel">
     <h2>Partie terminée</h2>
     <p id="finalScore"></p>
@@ -1614,13 +1622,27 @@ const best = loadBestScore();
 const isNewRecord = isBetterThan(current, best);
 
 if (isNewRecord) {
+
+    // Désactivation identique à la fin de partie
+    const pauseBtn = document.getElementById("pauseBtn");
+    const undoBtn  = document.getElementById("undoBtn");
+
+    if (pauseBtn) {
+      pauseBtn.disabled = true;
+      pauseBtn.classList.add("disabled");
+    }
+
+    if (undoBtn) {
+      undoBtn.disabled = true;
+      undoBtn.classList.add("disabled");
+    }
+
     saveBestScore(current);
-    updateBestScoreTop(); // Mise à jour du bandeau
+    updateBestScoreTop();
     playNewRecordSound();
     showBestScorePanel();
     return;
 }
-
 
     showEndGamePanel();
   }
