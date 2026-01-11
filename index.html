@@ -765,7 +765,7 @@ function saveGameState() {
   };
 
   try {
-    localStorage.setItem("currentGameState", JSON.stringify(data));
+    //localStorage.setItem("currentGameState", JSON.stringify(data));
   } catch (e) {
     console.error("Erreur sauvegarde partie :", e);
   }
@@ -774,7 +774,7 @@ function saveGameState() {
 function loadGameState() {
   try {
     const raw = localStorage.getItem("currentGameState");
-    return raw ? JSON.parse(raw) : null;
+    return raw; // ? JSON.parse(raw) : null;
   } catch (e) {
     console.error("Erreur chargement partie :", e);
     return null;
@@ -1686,12 +1686,12 @@ function initGame() {
   }
 
   // On tente de restaurer la partie
-  const restored = restoreGameState();
+  //const restored = restoreGameState();
 
   // Si la partie restaurée est terminée → on démarre une nouvelle partie
-  if (!restored || gameOver) {
+  //if (!restored || gameOver) {
     startNewGame();
-  }
+  //}
 
   updateCounters();
   updateTutorialButtonState();
