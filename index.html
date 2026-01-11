@@ -755,6 +755,7 @@ function saveGameState() {
     permanentPoints: Array.from(permanentPoints),
     usedEdges: Array.from(usedEdges),
     validatedSegments, // tableau simple → OK
+    historyStack: JSON.parse(JSON.stringify(validatedSegments)),
     score,
     jokersAvailable,
     jokersTotal,
@@ -762,10 +763,11 @@ function saveGameState() {
     timerSeconds,
     gameOver,
     paused
+    
   };
 
   try {
-    //localStorage.setItem("currentGameState", JSON.stringify(data));
+    localStorage.setItem("currentGameState", JSON.stringify(data));
   } catch (e) {
     console.error("Erreur sauvegarde partie :", e);
   }
@@ -774,7 +776,7 @@ function saveGameState() {
 function loadGameState() {
   try {
     const raw = localStorage.getItem("currentGameState");
-    return raw; // ? JSON.parse(raw) : null;
+    return raw ? JSON.parse(raw) : null;
   } catch (e) {
     console.error("Erreur chargement partie :", e);
     return null;
@@ -785,14 +787,15 @@ function restoreGameState() {
   const data = loadGameState();
   if (!data) return false;
 
-  // Restaurer les Sets correctement
+  // Restaurer les Sets
   activePoints = new Set(data.activePoints || []);
   permanentPoints = new Set(data.permanentPoints || []);
   usedEdges = new Set(data.usedEdges || []);
 
-  // Les tableaux simples restent des tableaux
+  // Restaurer les tableaux simples
   validatedSegments = data.validatedSegments || [];
 
+  // Restaurer les variables simples
   score = data.score ?? 0;
   jokersAvailable = data.jokersAvailable ?? 0;
   jokersTotal = data.jokersTotal ?? 0;
@@ -801,8 +804,29 @@ function restoreGameState() {
   gameOver = data.gameOver ?? false;
   paused = data.paused ?? false;
 
+  // Restaurer l'historique (si présent)
+  const historyList = document.getElementById("historyList");
+  historyList.innerHTML = "";
+
+  if (data.historyStack) {
+    data.historyStack.forEach(entry => {
+      appendHistoryEntry(entry.points, entry.activeCount);
+    });
+  }
+
+  // Mise à jour de l'affichage
   redrawEverything();
   updateCounters();
+  document.getElementById("undoCount").textContent = undoCount;
+
+
+  // Mise à jour du timer affiché
+  document.getElementById("timerValue").textContent = formatTime(timerSeconds);
+
+  // Relancer le timer si la partie est active
+  if (!paused && !gameOver) {
+    startTimer();
+  }
 
   return true;
 }
@@ -959,14 +983,6 @@ function drawGrid() {
     ctx.stroke();
   }
 
-  //for (let y = 0; y < size; y++) {
-  //  for (let x = 0; x < size; x++) {
-  //    ctx.beginPath();
-  //    ctx.arc(offset + x * spacing, offset + y * spacing, 3, 0, Math.PI * 2);
-  //    ctx.fillStyle = "#ccc";
- //     ctx.fill();
-  //  }
- // }
 }
 
 function drawPoint(x, y, color = "#000") {
@@ -1011,8 +1027,8 @@ function getNearestPoint(mx, my) {
     }
   }
 
-  // Tolérance : 12 px
-  if (bestDist <= 22) return best;
+  // Tolérance : 12 px puis 22 et 24
+  if (bestDist <= 24) return best;
 
   return null;
 }
@@ -1309,8 +1325,7 @@ function finalizeGameState() {
 }
 
 function showEndGamePanel() {
-  console.log("showEndGamePanel exécuté");
-
+  
   const finalScoreEl = document.getElementById("finalScore");
   if (finalScoreEl) {
     finalScoreEl.textContent = "Score final : " + score;
@@ -1686,12 +1701,12 @@ function initGame() {
   }
 
   // On tente de restaurer la partie
-  //const restored = restoreGameState();
+  const restored = restoreGameState();
 
   // Si la partie restaurée est terminée → on démarre une nouvelle partie
-  //if (!restored || gameOver) {
+  if (!restored || gameOver) {
     startNewGame();
-  //}
+  }
 
   updateCounters();
   updateTutorialButtonState();
@@ -1706,7 +1721,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Références DOM essentielles (globales)
   canvas = document.getElementById("gameCanvas");
-console.log("canvas =", canvas);
 
   ctx = canvas.getContext("2d");
   tutorialBtn = document.getElementById("stepBtn");
@@ -1763,7 +1777,6 @@ if (topLabels.length && leftLabels.length) {
   // ===============================
 
   canvas.addEventListener("click", (e) => {
-    console.log("CLICK LISTENER ENTERED");
 
     if (gameOver) return;
     if (!timerRunning) startTimer();
