@@ -1095,8 +1095,6 @@ function getNearestPoint(mx, my) {
     }
   }
 
-  console.log("nearest =", best, "dist =", bestDist);
-
   if (bestDist <= 20) return best;
 
   return null;
@@ -1944,15 +1942,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("helpBtn").addEventListener("click", () => {
-    playClickSound();
-    const overlay = document.getElementById("helpOverlay");
-    if (!overlay) {
-      console.error("helpOverlay introuvable dans le DOM");
-      return;
-    }
-    overlay.classList.remove("hidden");
-    overlay.style.display = "flex";
-  });
+  playClickSound();
+
+  const overlay = document.getElementById("helpOverlay");
+  if (!overlay) {
+    console.error("helpOverlay introuvable dans le DOM");
+    return;
+  }
+
+  //  Ajustement dynamique pour éviter que la fenêtre passe sous le bandeau
+  const topBar = document.getElementById("topBar");
+  if (topBar) {
+    const barHeight = topBar.offsetHeight;
+    overlay.style.paddingTop = `${barHeight + 20}px`; // marge de sécurité
+  }
+
+  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
+});
+
 
   document.getElementById("closeHelpBtn").addEventListener("click", () => {
     playClickSound();
