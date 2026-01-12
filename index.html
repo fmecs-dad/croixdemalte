@@ -157,6 +157,10 @@ body {
   overflow: hidden;
 }
 
+#mainArea {
+  min-height: 0;
+}
+
 /* === BOARD === */
 
 #boardWrapper {
@@ -164,6 +168,10 @@ body {
   padding-left: clamp(10px, 4vw, 60px);
   flex: 1;
   overflow: visible;
+}
+
+#boardWrapper {
+  min-height: 0;
 }
 
 .board-frame {
@@ -179,13 +187,13 @@ body {
   width: min(600px, 90vw);
   height: min(600px, 90vw);
   overflow: visible;
+  z-index: 0;
 }
 
 #canvasContainer::before {
   content: "";
   position: absolute;
 
-  /* Halo proportionnel au plateau */
   width: calc(min(600px, 90vw) + 20px);
   height: calc(min(600px, 90vw) + 20px);
 
@@ -199,15 +207,18 @@ body {
   );
 
   pointer-events: none;
-}
 
+  z-index: -1;
+}
 
 #gameCanvas {
   width: 100% !important;
   height: 100% !important;
   background: #fafafa;
   display: block;
+
   position: relative;
+  z-index: 1;
 }
 
 /* === LABELS === */
@@ -683,8 +694,8 @@ let soundEnabled = true;
 let audioUnlocked = false;
 
 const size = 34;
-const offset = 20;
-const spacing = (600 - 2 * offset) / (size - 1);
+let offset = 20;
+let spacing = (600 - 2 * offset) / (size - 1);
 
 // Variables de jeu
 let selectedStart = null;
@@ -794,6 +805,11 @@ document.getElementById("closeBestScore").addEventListener("click", () => {
   document.getElementById("bestScoreOverlay").classList.add("hidden");
 });
 
+function updateSoundButton() {
+  const btn = document.getElementById("soundBtn");
+  btn.textContent = soundEnabled ? "Son : on" : "Son : off";
+}
+
 // ===============================
 //   SAUVEGARDE PARTIE EN COURS
 // ===============================
@@ -813,6 +829,7 @@ function saveGameState() {
     undoCount,
     timerSeconds,
     gameOver,
+    soundEnabled,
     paused
     
   };
@@ -838,6 +855,23 @@ function restoreGameState() {
   const data = loadGameState();
   if (!data) return false;
 
+  // Si la sauvegarde est vide ou incomplète → considérer comme non restaurée
+if (!Array.isArray(data.activePoints) ||
+    !Array.isArray(data.permanentPoints) ||
+    !Array.isArray(data.validatedSegments) ||
+    data.activePoints.length === 0 ||
+    data.permanentPoints.length === 0) {
+  return false;
+}
+
+
+  if (!data.validatedSegments?.length &&
+      !data.activePoints?.length &&
+      !data.permanentPoints?.length) {
+    return false;
+  }
+
+
   // Restaurer les Sets
   activePoints = new Set(data.activePoints || []);
   permanentPoints = new Set(data.permanentPoints || []);
@@ -855,21 +889,23 @@ function restoreGameState() {
   gameOver = data.gameOver ?? false;
   paused = data.paused ?? false;
 
-  // Restaurer l'historique (si présent)
+  // Restaurer l'historique
   const historyList = document.getElementById("historyList");
   historyList.innerHTML = "";
-
   if (data.historyStack) {
     data.historyStack.forEach(entry => {
       appendHistoryEntry(entry.points, entry.activeCount);
     });
   }
 
+  // Restaurer l'état du son AVANT le redraw
+  soundEnabled = data.soundEnabled ?? true;
+  updateSoundButton();
+
   // Mise à jour de l'affichage
   redrawEverything();
   updateCounters();
   document.getElementById("undoCount").textContent = undoCount;
-
 
   // Mise à jour du timer affiché
   document.getElementById("timerValue").textContent = formatTime(timerSeconds);
@@ -881,7 +917,6 @@ function restoreGameState() {
 
   return true;
 }
-
 
 // Sauvegarde automatique à chaque coup
 function autoSave() {
@@ -1078,7 +1113,8 @@ function getNearestPoint(mx, my) {
     }
   }
 
-  // Tolérance : 12 px -> 24 trop bloquant
+  console.log("nearest =", best, "dist =", bestDist);
+
   if (bestDist <= 20) return best;
 
   return null;
@@ -1126,6 +1162,7 @@ function initMaltaCross() {
 }
 
 function redrawEverything() {
+  console.log("redrawEverything START");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
   drawMaltaCross();
@@ -1134,6 +1171,8 @@ function redrawEverything() {
     const [x, y] = key.split(",").map(Number);
     drawPoint(x, y);
   });
+  console.log("redrawEverything END");
+  	 
 }
 
 
@@ -1545,6 +1584,8 @@ function togglePause() {
 // ===============================
 
 function startNewGame() {
+  console.log("startNewGame CALLED");
+
   resetGameState();
   initMaltaCross();
   redrawEverything();
@@ -1751,18 +1792,25 @@ function initGame() {
     undoBtn.classList.remove("disabled");
   }
 
-  // On tente de restaurer la partie
-  const restored = restoreGameState();
+  // 🔥 On ignore complètement la restauration pour le moment
+  // const restored = restoreGameState();
+  // if (!restored || gameOver) {
+  //   startNewGame();
+  // }
 
-  // Si la partie restaurée est terminée → on démarre une nouvelle partie
-  if (!restored || gameOver) {
-    startNewGame();
-  }
+  // 🔥 On force toujours une nouvelle partie propre
+  resetGameState();
+  initMaltaCross();
+  redrawEverything();
+
+  gameOver = false;
+  paused = false;
 
   updateCounters();
   updateTutorialButtonState();
   updateBestScoreTop();
 }
+
 
 // ===============================
 //   DOMContentLoaded
@@ -1772,32 +1820,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Références DOM essentielles (globales)
   canvas = document.getElementById("gameCanvas");
-
   ctx = canvas.getContext("2d");
   tutorialBtn = document.getElementById("stepBtn");
 
-  // === Positionnement des repères
-const topLabels = document.querySelectorAll('#topLabels span');
-const leftLabels = document.querySelectorAll('#leftLabels span');
+  // ===============================
+  //   CALCUL RÉEL DU CANVAS + GRILLE
+  // ===============================
 
-if (topLabels.length && leftLabels.length) {
+  // 1) Fixer la taille réelle du canvas (CSS → JS)
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
 
-  topLabels.forEach(span => {
-    const pos = Number(span.textContent);
-    if (!Number.isFinite(pos)) return;
-    const x = offset + (pos - 1) * spacing;
-    span.style.left = `${x - 6}px`;
-  });
+  // 2) Recalculer spacing et offset en fonction de la taille réelle
+  spacing = canvas.width / (size + 1);
+  offset = spacing;
 
-  leftLabels.forEach(span => {
-    const pos = Number(span.textContent);
-    if (!Number.isFinite(pos)) return;
-    const y = offset + (pos - 1) * spacing;
-    span.style.top = `${y - 6}px`;
-  });
+  // ===============================
+  //   POSITIONNEMENT DES REPÈRES
+  // ===============================
 
-}
+  const topLabels = document.querySelectorAll('#topLabels span');
+  const leftLabels = document.querySelectorAll('#leftLabels span');
 
+  if (topLabels.length && leftLabels.length) {
+
+    topLabels.forEach(span => {
+      const pos = Number(span.textContent);
+      if (!Number.isFinite(pos)) return;
+      const x = offset + (pos - 1) * spacing;
+      span.style.left = `${x - 6}px`;
+    });
+
+    leftLabels.forEach(span => {
+      const pos = Number(span.textContent);
+      if (!Number.isFinite(pos)) return;
+      const y = offset + (pos - 1) * spacing;
+      span.style.top = `${y - 6}px`;
+    });
+  }
 
   // === Bouton OK fin de partie ===
   document.getElementById("closeEndGame").addEventListener("click", () => {
@@ -1806,22 +1866,20 @@ if (topLabels.length && leftLabels.length) {
 
   // === Bouton PAS À PAS ===
   tutorialBtn.addEventListener("click", () => {
-  playClickSound();
-  if (tutorialRunning) return;
+    playClickSound();
+    if (tutorialRunning) return;
 
-  localStorage.removeItem("currentGameState");  // ← indispensable
+    localStorage.removeItem("currentGameState");
 
-  const modal = document.getElementById("readyModal");
-  if (modal) modal.style.display = "none";
+    const modal = document.getElementById("readyModal");
+    if (modal) modal.style.display = "none";
 
-  resetGameState();
-  initMaltaCross();
-  redrawEverything();
-  initGame();
-  runTutorial();
-});
-
-  redrawEverything();
+    resetGameState();
+    initMaltaCross();
+    redrawEverything();
+    initGame();
+    runTutorial();
+  });
 
   // ===============================
   //   LISTENER : CLIC SUR LA GRILLE
@@ -1870,18 +1928,16 @@ if (topLabels.length && leftLabels.length) {
     }
   });
 
-
   // ===============================
   //   BOUTONS
   // ===============================
 
   document.getElementById("resetBtn").addEventListener("click", () => {
-  playClickSound();
-  localStorage.removeItem("currentGameState");  // ← indispensable
-  startNewGame();
-  initGame();
-});
-
+    playClickSound();
+    localStorage.removeItem("currentGameState");
+    startNewGame();
+    initGame();
+  });
 
   document.getElementById("undoBtn").addEventListener("click", () => {
     playClickSound();
@@ -1894,32 +1950,31 @@ if (topLabels.length && leftLabels.length) {
   });
 
   document.getElementById("helpBtn").addEventListener("click", () => {
-  playClickSound();
-  const overlay = document.getElementById("helpOverlay");
-  if (!overlay) {
-    console.error("helpOverlay introuvable dans le DOM");
-    return;
-  }
-  overlay.classList.remove("hidden");
-  overlay.style.display = "flex";
-});
+    playClickSound();
+    const overlay = document.getElementById("helpOverlay");
+    if (!overlay) {
+      console.error("helpOverlay introuvable dans le DOM");
+      return;
+    }
+    overlay.classList.remove("hidden");
+    overlay.style.display = "flex";
+  });
 
-document.getElementById("closeHelpBtn").addEventListener("click", () => {
-  playClickSound();
-  const overlay = document.getElementById("helpOverlay");
-  if (!overlay) {
-    console.error("helpOverlay introuvable dans le DOM");
-    return;
-  }
-  overlay.style.display = "none";
-  overlay.classList.add("hidden");
-});
+  document.getElementById("closeHelpBtn").addEventListener("click", () => {
+    playClickSound();
+    const overlay = document.getElementById("helpOverlay");
+    if (!overlay) {
+      console.error("helpOverlay introuvable dans le DOM");
+      return;
+    }
+    overlay.style.display = "none";
+    overlay.classList.add("hidden");
+  });
 
-
-  document.getElementById("soundBtn").addEventListener("click", (e) => {
+  document.getElementById("soundBtn").addEventListener("click", () => {
     playClickSound();
     soundEnabled = !soundEnabled;
-    e.target.textContent = soundEnabled ? "Son : on" : "Son : off";
+    updateSoundButton();
   });
 
   // ===============================
@@ -1955,7 +2010,7 @@ document.getElementById("closeHelpBtn").addEventListener("click", () => {
     a.load();
   });
 
-}); // ← FIN CORRECTE DU DOMContentLoaded
+}); // ← FIN DOMContentLoaded
 
 </script>
 </body>
