@@ -856,30 +856,22 @@ function restoreGameState() {
   const data = loadGameState();
   if (!data) return false;
 
-  // Si la sauvegarde est vide ou incomplète → considérer comme non restaurée
-if (!Array.isArray(data.activePoints) ||
-    !Array.isArray(data.permanentPoints) ||
-    !Array.isArray(data.validatedSegments) ||
-    data.activePoints.length === 0 ||
-    data.permanentPoints.length === 0) {
-  return false;
-}
-
-
-  if (!data.validatedSegments?.length &&
-      !data.activePoints?.length &&
-      !data.permanentPoints?.length) {
+  // Vérification stricte : données essentielles présentes
+  if (!Array.isArray(data.activePoints) ||
+      !Array.isArray(data.permanentPoints) ||
+      !Array.isArray(data.validatedSegments) ||
+      data.activePoints.length === 0 ||
+      data.permanentPoints.length === 0) {
     return false;
   }
 
-
   // Restaurer les Sets
-  activePoints = new Set(data.activePoints || []);
-  permanentPoints = new Set(data.permanentPoints || []);
+  activePoints = new Set(data.activePoints);
+  permanentPoints = new Set(data.permanentPoints);
   usedEdges = new Set(data.usedEdges || []);
 
   // Restaurer les tableaux simples
-  validatedSegments = data.validatedSegments || [];
+  validatedSegments = data.validatedSegments;
 
   // Restaurer les variables simples
   score = data.score ?? 0;
@@ -899,25 +891,13 @@ if (!Array.isArray(data.activePoints) ||
     });
   }
 
-  // Restaurer l'état du son AVANT le redraw
+  // Restaurer l'état du son
   soundEnabled = data.soundEnabled ?? true;
   updateSoundButton();
 
-  // Mise à jour de l'affichage
-  redrawEverything();
-  updateCounters();
-  document.getElementById("undoCount").textContent = undoCount;
-
-  // Mise à jour du timer affiché
-  document.getElementById("timerValue").textContent = formatTime(timerSeconds);
-
-  // Relancer le timer si la partie est active
-  if (!paused && !gameOver) {
-    startTimer();
-  }
-
   return true;
 }
+
 
 // Sauvegarde automatique à chaque coup
 function autoSave() {
@@ -1147,11 +1127,15 @@ function initMaltaCross() {
 
   for (const [dx, dy, n] of steps) {
     for (let i = 0; i < n; i++) {
-      x += dx; y += dy; add(x, y);
+      x += dx; y += dy;
+      add(x, y);
     }
   }
 
-  const offsetX = 15, offsetY = 12;
+  // Centrage automatique dans la grille responsive
+  const shapeSize = 7; // largeur/hauteur logique de la croix
+  const offsetX = Math.floor((size - shapeSize) / 2);
+  const offsetY = Math.floor((size - shapeSize) / 2);
 
   pts.forEach(p => {
     const key = `${p.x + offsetX},${p.y + offsetY}`;
@@ -1162,8 +1146,8 @@ function initMaltaCross() {
   autoSave();
 }
 
+
 function redrawEverything() {
-  console.log("redrawEverything START");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
   drawMaltaCross();
@@ -1172,7 +1156,6 @@ function redrawEverything() {
     const [x, y] = key.split(",").map(Number);
     drawPoint(x, y);
   });
-  console.log("redrawEverything END");
   	 
 }
 
@@ -1585,8 +1568,6 @@ function togglePause() {
 // ===============================
 
 function startNewGame() {
-  console.log("startNewGame CALLED");
-
   resetGameState();
   initMaltaCross();
   redrawEverything();
@@ -1787,29 +1768,40 @@ function playTutorialStep() {
 // ===============================
 
 function initGame() {
+
   const undoBtn = document.getElementById("undoBtn");
   if (undoBtn) {
     undoBtn.disabled = false;
     undoBtn.classList.remove("disabled");
   }
 
-  // 🔥 On ignore complètement la restauration pour le moment
-  // const restored = restoreGameState();
-  // if (!restored || gameOver) {
-  //   startNewGame();
-  // }
+  // 1. Tenter une restauration
+  const restored = restoreGameState();
 
-  // 🔥 On force toujours une nouvelle partie propre
-  resetGameState();
-  initMaltaCross();
-  redrawEverything();
+  // 2. Si la restauration échoue → nouvelle partie
+  if (!restored || gameOver) {
+    resetGameState();
+    initMaltaCross();
+  }
 
-  gameOver = false;
-  paused = false;
+  // 3. Dessiner l’état actuel (restauré ou neuf)
+redrawEverything();
 
-  updateCounters();
-  updateTutorialButtonState();
-  updateBestScoreTop();
+// 4. Mettre à jour l’UI
+updateCounters();
+document.getElementById("undoCount").textContent = undoCount;
+updateSoundButton();
+
+gameOver = false;
+paused = false;
+
+updateTutorialButtonState();
+updateBestScoreTop();
+
+  // 5. Relancer le timer si nécessaire
+  if (!paused && !gameOver) {
+    startTimer();
+  }
 }
 
 
