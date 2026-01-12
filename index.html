@@ -424,6 +424,7 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 20000;
+  padding: 20px; /* important pour petits écrans */
 }
 
 .modal-content {
@@ -433,6 +434,12 @@ body {
   text-align: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   font-size: 18px;
+
+  /* Adaptation automatique */
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  box-sizing: border-box;
 }
 
 #readyModal {
@@ -1028,8 +1035,8 @@ function getNearestPoint(mx, my) {
     }
   }
 
-  // Tolérance : 12 px puis 22 et 24
-  if (bestDist <= 24) return best;
+  // Tolérance : 12 px -> 24 trop bloquant
+  if (bestDist <= 20) return best;
 
   return null;
 }
