@@ -7,13 +7,33 @@
   <link rel="preload" as="image" href="images/monfond.jpg">
   <link rel="icon" type="image/png" href="favicon.png?v=1">
 
-  <style>
-  /* === Mise en page générale === */
+<style>
+
+/* === Mise en page générale === */
 
 /* === GLOBAL === */
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img, canvas {
+  max-width: 100%;
+}
+
+/* utile si tu veux réutiliser .flex */
+.flex {
+  flex-wrap: wrap;
+}
+
+body {
   font-family: Arial, sans-serif;
   background-image: url("images/monfond.jpg");
   background-size: cover;
@@ -34,21 +54,23 @@ body {
   top: 0;
   z-index: 10000;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
   gap: 20px;
   background: #333;
   color: white;
   padding: 10px 20px;
+  width: 100%;
 }
 
 #titleArea h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: clamp(18px, 3vw, 24px);
 }
 
 #subtitle {
-  font-size: 14px;
+  font-size: clamp(12px, 2vw, 14px);
   opacity: 0.9;
 }
 
@@ -57,7 +79,7 @@ body {
   flex-direction: column;
   gap: 2px;
   text-align: right;
-  font-size: 15px;
+  font-size: clamp(12px, 2vw, 15px);
   flex-shrink: 0;
 }
 
@@ -69,6 +91,7 @@ body {
 
 #buttonsArea {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
@@ -78,7 +101,7 @@ body {
   border: none;
   cursor: pointer;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: clamp(12px, 2vw, 14px);
   white-space: nowrap;
   background: #0078d4;
   color: white;
@@ -96,16 +119,19 @@ body {
   pointer-events: none;
 }
 
+/* === HELP CLOSE BUTTON === */
+
 #closeHelpBtn {
   position: absolute;
   top: 12px;
   right: 12px;
 }
 
+/* === HELP CONTENT === */
+
 #helpContent {
   background: #fff;
-  width: 800px;
-  max-width: 90%;
+  width: min(800px, 90vw);
   max-height: 80vh; /* empêche de dépasser sous le bandeau */
   padding: 30px;
   border-radius: 12px;
@@ -114,7 +140,6 @@ body {
   overflow-y: auto;
   box-sizing: border-box;
 }
-
 
 .aide-separator {
   width: 100%;
@@ -129,14 +154,16 @@ body {
   display: flex;
   flex: 1;
   align-items: flex-start;
+  overflow: hidden;
 }
 
 /* === BOARD === */
 
 #boardWrapper {
   padding-top: 20px;
-  padding-left: 60px;
-  min-height: 600px;
+  padding-left: clamp(10px, 4vw, 60px);
+  flex: 1;
+  overflow: visible;
 }
 
 .board-frame {
@@ -145,30 +172,39 @@ body {
   border-image: url("images/plateau.jpg") 30 round;
 }
 
+/* plateau responsive */
+
 #canvasContainer {
   position: relative;
-  width: 600px;
-  height: 600px;
+  width: min(600px, 90vw);
+  height: min(600px, 90vw);
+  overflow: visible;
 }
 
 #canvasContainer::before {
   content: "";
   position: absolute;
-  width: 680px;
-  height: 680px;
+
+  /* Halo proportionnel au plateau */
+  width: calc(min(600px, 90vw) + 20px);
+  height: calc(min(600px, 90vw) + 20px);
+
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+
   background: radial-gradient(circle,
     rgba(255,255,255,0.25) 40%,
     rgba(0,0,0,0.25) 100%
   );
+
   pointer-events: none;
 }
 
+
 #gameCanvas {
-  width: 600px !important;
-  height: 600px !important;
+  width: 100% !important;
+  height: 100% !important;
   background: #fafafa;
   display: block;
   position: relative;
@@ -183,18 +219,18 @@ body {
 
 #topLabels span, #leftLabels span {
   position: absolute;
-  font-size: 12px;
+  font-size: clamp(10px, 1.5vw, 12px);
   color: #444;
 }
 
 #topLabels {
   top: -22px;
-  width: 700px;
+  width: 100%;
 }
 
 #leftLabels {
   left: -20px;
-  height: 700px;
+  height: 100%;
 }
 
 /* === FLASH MESSAGES === */
@@ -232,12 +268,13 @@ body {
 
 #sidePanel {
   margin-top: 10px;
-  width: 320px;
+  width: clamp(220px, 28vw, 320px);
   background: #fafafa;
   border: 1px solid #e0e0e0;
   padding: 20px 12px 10px;
   box-shadow: 0 0 8px rgba(0,0,0,0.25);
   border-radius: 8px;
+  overflow-y: auto;
 }
 
 #historyTitle {
@@ -288,6 +325,8 @@ body {
   display: none !important;
 }
 
+/* === GENERIC OVERLAY === */
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -314,7 +353,7 @@ body {
   border: 1px solid #e0e0e0;
 }
 
-/* === BEST SCORE PANEL (restauration complète) === */
+/* === BEST SCORE PANEL === */
 
 #bestScoreOverlay .panel {
   min-width: 460px;
@@ -327,7 +366,7 @@ body {
   animation: popIn 0.25s ease-out;
   isolation: isolate;
 }
-	
+    
 #bestScoreContent {
   width: auto;
   max-width: 640px;
@@ -337,27 +376,6 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 24px;
-}
-
-#tutorialBubble {
-  position: absolute;
-  top: 20px;                          /* en haut du plateau */
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(30, 30, 30, 0.92); /* même style que les flash messages */
-  color: #fff;                        /* texte blanc */
-  padding: 14px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  font-size: 16px;                    /* lisible */
-  font-weight: 500;                   /* lisible */
-  max-width: 85%;
-  text-align: center;
-  z-index: 3000;
-  opacity: 0;                         /* pour l’animation JS */
-  transition: opacity 0.3s ease;
-  pointer-events: none;               /* ne bloque pas les clics */
-  display: none;
 }
 
 .record-line {
@@ -372,6 +390,63 @@ body {
   padding: 8px 16px;
   font-size: 1em;
   margin-top: 8px;
+}
+
+/* === TUTORIAL BUBBLE === */
+
+#tutorialBubble {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.92);
+  color: #fff;
+  padding: 14px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  font-size: 16px;
+  font-weight: 500;
+  max-width: 85%;
+  text-align: center;
+  z-index: 3000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  display: none;
+}
+
+/* === MODAL GÉNÉRIQUE === */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20000;
+  padding: 20px; /* important pour petits écrans */
+  overflow: hidden;
+}
+
+.modal-content {
+  margin: auto;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  font-size: 18px;
+
+  /* Adaptation automatique */
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+#readyModal {
+  z-index: 200000 !important;
 }
 
 /* === ANIMATIONS === */
@@ -390,7 +465,7 @@ body {
   50% { transform: scale(1.4); }
 }
 
-/* === Animation premium : arrivée du plateau === */
+/* Animation premium : arrivée du plateau */
 
 .slide-in-premium {
   opacity: 0;
@@ -413,39 +488,6 @@ body {
   100% { transform: translateX(0) scale(1); }
 }
 
-
-/* === MODAL === */
-
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 20000;
-  padding: 20px; /* important pour petits écrans */
-}
-
-.modal-content {
-  margin: auto;
-  background: white;
-  padding: 20px 30px;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  font-size: 18px;
-
-  /* Adaptation automatique */
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: auto;
-  box-sizing: border-box;
-}
-
-#readyModal {
-  z-index: 200000 !important;
-}
 
   </style>
 </head>
