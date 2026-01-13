@@ -330,7 +330,7 @@ body {
   align-items: flex-start; /* aligne en haut */
   justify-content: center;
   padding-top: 100px; /* hauteur du bandeau + marge */
-  z-index: 2000;
+  z-index: 999999;
 }
 
 #helpOverlay.hidden {
@@ -681,22 +681,11 @@ body {
 //   VARIABLES GLOBALES
 // ===============================
 
-//const bestScoreTemplate = {
-//  score: 0,
-//  jokersUsed: 0,
-//  returnsUsed: 0,
-//  duration: 0,
-//  grid: null,
-//  screenshot: null,
-//  date: null
-//};
-
 let soundEnabled = true;
 let audioUnlocked = false;
 
 const size = 34;
 let offset;
-//let spacing = (600 - 2 * offset) / (size - 1);
 let spacing;
 
 // Variables de jeu
@@ -733,6 +722,20 @@ const tutorialSteps = [
   { message: "Exemple 2 : une ligne verticale.",   start: { x: 15, y: 12 }, end: { x: 15, y: 16 } },
   { message: "Exemple 3 : une ligne diagonale.",   start: { x: 12, y: 16 }, end: { x: 16, y: 12 } }
 ];
+
+function debugPoint(x, y) {
+  const cx = offset + x * spacing;
+  const cy = offset + y * spacing;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  console.log("Debug:", x, y);
+}
+
 
 // ===============================
 //   MEILLEUR SCORE
@@ -854,7 +857,9 @@ function loadGameState() {
 }
 
 function restoreGameState() {
-  const data = loadGameState();
+console.log("RESTORE OK");
+  
+const data = loadGameState();
   if (!data) return false;
 
   // Vérification stricte : données essentielles présentes
@@ -1032,6 +1037,8 @@ function updateTutorialButtonState() {
 //   DESSIN DE LA GRILLE
 // ===============================
 
+const visualOrigin = offset - spacing;
+
 function drawGrid() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#ddd";
@@ -1050,7 +1057,6 @@ function drawGrid() {
     ctx.lineTo(offset + x * spacing, offset + (size - 1) * spacing);
     ctx.stroke();
   }
-
 }
 
 function drawPoint(x, y, color = "#000") {
@@ -1059,6 +1065,7 @@ function drawPoint(x, y, color = "#000") {
   ctx.fillStyle = color;
   ctx.fill();
 }
+
 
 function drawSegment(segmentPoints) {
   const [sx, sy] = segmentPoints[0].split(",").map(Number);
@@ -1113,6 +1120,11 @@ function drawMaltaCross() {
 }
 
 function initMaltaCross() {
+
+  permanentPoints.clear();
+  activePoints.clear();
+
+  // Construction brute de la croix
   let x = 0, y = 0;
   const pts = [];
   const add = (px, py) => pts.push({ x: px, y: py });
@@ -1126,16 +1138,24 @@ function initMaltaCross() {
 
   for (const [dx, dy, n] of steps) {
     for (let i = 0; i < n; i++) {
-      x += dx; y += dy;
+      x += dx;
+      y += dy;
       add(x, y);
     }
   }
 
-  // Centrage automatique dans la grille responsive
-  const shapeSize = 7; // largeur/hauteur logique de la croix
-  const offsetX = Math.floor((size - shapeSize) / 2);
-  const offsetY = Math.floor((size - shapeSize) / 2);
+  // Point de référence dans la croix brute
+  const refX = -3;
+  const refY = 3;
 
+  // Point logique où placer ce point
+  const targetLeftX = 12;
+  const targetLeftY = 15;
+
+  const offsetX = targetLeftX - refX; // 15
+  const offsetY = targetLeftY - refY; // 12
+
+  // Application de l’offset
   pts.forEach(p => {
     const key = `${p.x + offsetX},${p.y + offsetY}`;
     permanentPoints.add(key);
@@ -1145,17 +1165,22 @@ function initMaltaCross() {
   autoSave();
 }
 
-
 function redrawEverything() {
+
+  // Le canvas s’adapte visuellement
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   drawGrid();
-  drawMaltaCross();
+
   validatedSegments.forEach(seg => drawSegment(seg.points));
+
   activePoints.forEach(key => {
     const [x, y] = key.split(",").map(Number);
     drawPoint(x, y);
   });
-  	 
 }
 
 
@@ -1669,9 +1694,26 @@ function animateLine(points) {
 
 
 // ===============================
-//   TUTORIEL : SEGMENT PROGRESSIF
+//   TUTORIEL AUTOMATIQUE
 // ===============================
 
+function runTutorial() {
+  if (tutorialRunning) return;
+
+  tutorialRunning = true;
+  currentTutorialStep = 0;
+
+  setButtonsEnabled(false);
+  tutorialBtn.disabled = true;
+  tutorialBtn.classList.add("disabled");
+
+  playTutorialStep();
+}  // ← FERMER runTutorial ICI
+
+
+// --------------------------------------
+// Fonction indépendante
+// --------------------------------------
 function drawSegmentProgressively(start, end, onComplete, isTutorial = false) {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
@@ -1679,10 +1721,13 @@ function drawSegmentProgressively(start, end, onComplete, isTutorial = false) {
   const stepY = Math.sign(dy);
 
   const segment = [];
-  for (let i = 0; i < 5; i++) {
+
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  for (let i = 0; i <= steps; i++) {
     segment.push(`${start.x + i * stepX},${start.y + i * stepY}`);
   }
-
+  console.log(segment)
+  segment.forEach(p => console.log(p, activePoints.has(p)))
   animateLine(segment).then(() => {
     segment.forEach(key => {
       const [px, py] = key.split(",").map(Number);
@@ -1698,13 +1743,13 @@ function drawSegmentProgressively(start, end, onComplete, isTutorial = false) {
       validatedSegments.push({
         points: segment,
         edges: edges,
-        activeCount: 4
+        activeCount: steps
       });
 
       score++;
       autoSave();
       updateCounters();
-      appendHistoryEntry(segment, 4);
+      appendHistoryEntry(segment, steps);
       updateTutorialButtonState();
     }
 
@@ -1713,54 +1758,52 @@ function drawSegmentProgressively(start, end, onComplete, isTutorial = false) {
 }
 
 
-// ===============================
-//   TUTORIEL AUTOMATIQUE
-// ===============================
-
-function runTutorial() {
-  if (tutorialRunning) return;
-
-  tutorialRunning = true;
-  currentTutorialStep = 0;
-
-  setButtonsEnabled(false);
-  tutorialBtn.disabled = true;
-  tutorialBtn.classList.add("disabled");
-
-  playTutorialStep();
-}
-
 function playTutorialStep() {
+
+  // 1) Récupération de l’étape
   const step = tutorialSteps[currentTutorialStep];
 
+  // 2) Fin du tutoriel
   if (!step) {
     tutorialRunning = false;
     showTutorialBubble("Tutoriel terminé !");
     setTimeout(() => hideTutorialBubble(), 2000);
     setButtonsEnabled(true);
     updateTutorialButtonState();
-
     redrawEverything();
     flash("A vous de jouer", "info");
     return;
   }
 
+  console.log("Tutoriel start:", step.start);
+
+  // 3) Mise à jour visuelle
+  if (typeof positionLabels === "function") {
+    positionLabels();
+  }
+
+  redrawEverything();
+
+  // 4) Affichage du message
   showTutorialBubble(step.message, step.icon);
   const bubble = document.getElementById("tutorialBubble");
   bubble.className = "step" + (currentTutorialStep + 1);
 
-  blinkPoint(step.start.x, step.start.y).then(() => {
-    blinkPoint(step.end.x, step.end.y).then(() => {
+  // 5) Animation : start → end → segment
+  blinkPoint(step.start.x, step.start.y)
+    .then(() => blinkPoint(step.end.x, step.end.y))
+    .then(() => {
       drawSegmentProgressively(step.start, step.end, () => {
+
+        // 6) Passage à l’étape suivante
         setTimeout(() => {
           currentTutorialStep++;
           playTutorialStep();
         }, 600);
+
       }, true);
     });
-  });
 }
-
 
 // ===============================
 //   INITIALISATION DU JEU (GLOBAL !)
@@ -1774,35 +1817,29 @@ function initGame() {
     undoBtn.classList.remove("disabled");
   }
 
-  // 1. Tenter une restauration
-  const restored = restoreGameState();
+  const restored = false;
 
-  // 2. Si la restauration échoue → nouvelle partie
   if (!restored || gameOver) {
     resetGameState();
     initMaltaCross();
   }
 
-  // 3. Dessiner l’état actuel (restauré ou neuf)
-redrawEverything();
+  redrawEverything();
 
-// 4. Mettre à jour l’UI
-updateCounters();
-document.getElementById("undoCount").textContent = undoCount;
-updateSoundButton();
+  updateCounters();
+  document.getElementById("undoCount").textContent = undoCount;
+  updateSoundButton();
 
-gameOver = false;
-paused = false;
+  gameOver = false;
+  paused = false;
 
-updateTutorialButtonState();
-updateBestScoreTop();
+  updateTutorialButtonState();
+  updateBestScoreTop();
 
-  // 5. Relancer le timer si nécessaire
-  if (!paused && !gameOver) {
-    startTimer();
-  }
+  //if (!paused && !gameOver) {
+  //  startTimer();
+ // }
 }
-
 
 // ===============================
 //   DOMContentLoaded
@@ -1880,7 +1917,10 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.addEventListener("click", (e) => {
 
     if (gameOver) return;
-    if (!timerRunning) startTimer();
+    if (!tutorialRunning && !gameOver && !timerRunning) {
+    startTimer();
+    }
+
     if (tutorialRunning) return;
 
     if (paused) resumeGame();
