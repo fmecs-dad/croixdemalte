@@ -552,7 +552,7 @@ body {
         <button id="helpBtn" class="main-btn">Aide</button>
         <button id="soundBtn" class="main-btn">Son : on</button>
 
-        <span id="bestScoreTop" class="best-score-info">Aucun record</span>
+        <span id="bestScoreTop" class="best-score-info"></span>
 
       </div>
 
@@ -751,7 +751,7 @@ function updateBestScoreTop() {
 
   const best = loadBestScore();
   if (!best || isNaN(Number(best.score))) {
-    el.textContent = "Aucun record";
+    el.textContent = "";
     return;
   }
 
